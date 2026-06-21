@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tableau de bord — CRM</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <script src="/vendor/chartjs/chart.umd.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-mount"></div>
+
+    <div class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Tableau de bord</h1>
+          <p>Vue d'ensemble de votre activité commerciale</p>
+        </div>
+      </div>
+
+      <div id="dashboard-error" class="error-msg" style="display:none; margin-bottom:20px;"></div>
+
+      <div class="stats-grid" id="stats-grid">
+        <!-- injecté en JS -->
+      </div>
+
+      <div class="insights-grid">
+        <div class="insight-card">
+          <div class="insight-header">
+            <h3>Analytics et tendances</h3>
+            <p class="subtext">Synthèse locale calculée à partir de vos données CRM.</p>
+          </div>
+          <div class="analytics-list" id="analytics-list">
+            <div class="analytics-item">Chargement des tendances...</div>
+          </div>
+        </div>
+
+        <div class="insight-card highlight-card">
+          <div class="insight-header">
+            <h3>Prévisions locales</h3>
+            <p class="subtext">Estimations simples calculées sans API externe.</p>
+          </div>
+          <div class="prediction-list">
+            <div class="prediction-item">
+              <span class="label">CA prévisionnel prochain mois</span>
+              <strong class="value" id="predicted-ca">...</strong>
+            </div>
+            <div class="prediction-item">
+              <span class="label">Opportunités attendues</span>
+              <strong class="value" id="predicted-opps">...</strong>
+            </div>
+            <div class="prediction-item">
+              <span class="label">Tendance du pipeline</span>
+              <strong class="value" id="predicted-pipeline">...</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pipeline-summary" id="pipeline-summary"></div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Évolution du chiffre d'affaires (12 derniers mois)</h3>
+          <canvas id="chart-ca" height="90"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Répartition du pipeline</h3>
+          <canvas id="chart-pipeline"></canvas>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Documents par statut</h3>
+          <canvas id="chart-documents" height="90"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Workflows par statut</h3>
+          <canvas id="chart-workflows" height="90"></canvas>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Nouvelles opportunités par mois</h3>
+          <canvas id="chart-opp-mensuel" height="90"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Répartition des contacts</h3>
+          <canvas id="chart-contacts"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script>
+    async function loadDashboard() {
+      await initSidebar('dashboard');
+
+      const stats = await api.get('/api/stats/dashboard');
+      document.getElementById('stats-grid').innerHTML = `
+        <div class="stat-card">
+          <div class="label">Contacts totaux</div>
+          <div class="value">${stats.totalContacts || 0}</div>
+          <div class="sub">${stats.totalClients || 0} clients actifs</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Opportunités</div>
+          <div class="value">${stats.totalOpportunites || 0}</div>
+          <div class="sub">${stats.oppEnCours || 0} en cours</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Documents</div>
+          <div class="value">${stats.totalDocuments || 0}</div>
+          <div class="sub">${stats.totalFactures || 0} factures / ${stats.totalDevis || 0} devis</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Workflows</div>
+          <div class="value">${stats.totalWorkflows || 0}</div>
+          <div class="sub">${stats.tachesEnCours || 0} tâches actives</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Notes techniques</div>
+          <div class="value">${stats.notesTechnique || 0}</div>
+          <div class="sub">Contacts avec détails techniques</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Notes comptables</div>
+          <div class="value">${stats.notesComptables || 0}</div>
+          <div class="sub">Contacts avec informations de paiement</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">CA encaissé</div>
+          <div class="value">${formatMontant(stats.caTotal || 0)}</div>
+          <div class="sub">${stats.facturesEnRetard || 0} facture(s) en retard</div>
+        </div>
+      `;
+
+      // --- Courbe CA mensuel ---
+      const caData = await api.get('/api/stats/ca-mensuel');
+      new Chart(document.getElementById('chart-ca'), {
+        type: 'line',
+        data: {
+          labels: caData.map(d => d.mois),
+          datasets: [{
+            label: 'CA encaissé (XOF)',
+            data: caData.map(d => d.total),
+            borderColor: CHART_COLORS.bleu,
+            backgroundColor: 'rgba(59,130,246,0.1)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      // --- Camembert Pipeline par étape ---
+      const pipelineData = await api.get('/api/stats/pipeline-par-etape');
+      const labelsEtapes = { nouveau: 'Nouveau', qualification: 'Qualification', proposition: 'Proposition', negociation: 'Négociation', gagne: 'Gagné', perdu: 'Perdu' };
+      document.getElementById('pipeline-summary').innerHTML = pipelineData.map(d => `
+        <div class="stat-card" style="background: #f8fafc; border-color: #e2e8f0;">
+          <div class="label">${labelsEtapes[d.etape] || d.etape}</div>
+          <div class="value">${d.count || 0}</div>
+          <div class="sub">${formatMontant(d.montant || 0)} total</div>
+        </div>
+      `).join('');
+      new Chart(document.getElementById('chart-pipeline'), {
+        type: 'doughnut',
+        data: {
+          labels: pipelineData.map(d => labelsEtapes[d.etape] || d.etape),
+          datasets: [{
+            data: pipelineData.map(d => d.count),
+            backgroundColor: CHART_PALETTE
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+      });
+
+      // --- Courbe opportunités créées par mois ---
+      const oppMensuel = await api.get('/api/stats/opportunites-mensuel');
+      const caSeries = caData.map(d => Number(d.total) || 0);
+      const oppSeries = oppMensuel.map(d => Number(d.count) || 0);
+      const pipelineCounts = pipelineData.map(d => Number(d.count) || 0);
+
+      const predictedCA = predictNextValue(caSeries);
+      const predictedOpps = predictNextValue(oppSeries);
+      const predictedPipeline = predictNextValue(pipelineCounts);
+      const totalPipeline = pipelineCounts.reduce((sum, value) => sum + value, 0);
+      const winCount = pipelineData.find(d => d.etape === 'gagne')?.count || 0;
+      const averageDeal = stats.totalOpportunites ? stats.caTotal / stats.totalOpportunites : 0;
+      const averageMonthlyOpp = oppSeries.length ? oppSeries.reduce((sum, value) => sum + value, 0) / oppSeries.length : 0;
+      const monthlyGrowth = caSeries.length > 1 ? ((caSeries[caSeries.length - 1] / caSeries[0] - 1) / (caSeries.length - 1)) * 100 : 0;
+
+      document.getElementById('analytics-list').innerHTML = [
+        `Taux de réussite du pipeline : <strong>${formatPercent(totalPipeline ? (winCount / totalPipeline) * 100 : 0)}</strong>`,
+        `CA moyen par opportunité : <strong>${formatMontant(averageDeal)}</strong>`,
+        `Croissance mensuelle moyenne : <strong>${formatPercent(monthlyGrowth)}</strong>`,
+        `Opportunités mensuelles moyennes : <strong>${Math.round(averageMonthlyOpp)}</strong>`
+      ].map(item => `<div class="analytics-item">${item}</div>`).join('');
+
+      document.getElementById('predicted-ca').textContent = formatMontant(predictedCA);
+      document.getElementById('predicted-opps').textContent = `${Math.round(predictedOpps)} opportunités`;
+      document.getElementById('predicted-pipeline').textContent = `Trend ${predictedPipeline >= pipelineCounts[pipelineCounts.length - 1] ? 'positive' : 'stable'} (${formatPercent(totalPipeline ? ((predictedPipeline - pipelineCounts[pipelineCounts.length - 1]) / totalPipeline) * 100 : 0)})`;
+
+      new Chart(document.getElementById('chart-opp-mensuel'), {
+        type: 'bar',
+        data: {
+          labels: oppMensuel.map(d => d.mois),
+          datasets: [{
+            label: 'Nouvelles opportunités',
+            data: oppMensuel.map(d => d.count),
+            backgroundColor: CHART_COLORS.vert,
+            borderRadius: 4
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+      });
+
+      // --- Camembert Documents par statut ---
+      const documentsData = await api.get('/api/stats/factures-par-statut');
+      new Chart(document.getElementById('chart-documents'), {
+        type: 'doughnut',
+        data: {
+          labels: documentsData.map(d => d.statut.replace('_', ' ')),
+          datasets: [{
+            data: documentsData.map(d => d.count),
+            backgroundColor: CHART_PALETTE
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+      });
+
+      // --- Camembert Workflows par statut ---
+      const workflowsData = await api.get('/api/stats/workflows-par-statut');
+      new Chart(document.getElementById('chart-workflows'), {
+        type: 'pie',
+        data: {
+          labels: workflowsData.map(d => d.statut.replace('_', ' ')),
+          datasets: [{
+            data: workflowsData.map(d => d.count),
+            backgroundColor: CHART_PALETTE
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+      });
+
+      // --- Camembert Contacts par type ---
+      const contactsData = await api.get('/api/stats/contacts-par-type');
+      const labelsType = { prospect: 'Prospects', client: 'Clients', partenaire: 'Partenaires' };
+      new Chart(document.getElementById('chart-contacts'), {
+        type: 'pie',
+        data: {
+          labels: contactsData.map(d => labelsType[d.type] || d.type),
+          datasets: [{
+            data: contactsData.map(d => d.count),
+            backgroundColor: CHART_PALETTE
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+      });
+    }
+
+    (async () => {
+      try {
+        await loadDashboard();
+      } catch (err) {
+        const errorBox = document.getElementById('dashboard-error');
+        errorBox.textContent = err.message || 'Impossible de charger le tableau de bord.';
+        errorBox.style.display = 'block';
+        console.error(err);
+      }
+    })();
+  </script>
+</body>
+</html>

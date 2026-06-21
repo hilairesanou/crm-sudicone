@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Utilisateurs — CRM</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-mount"></div>
+
+    <div class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Utilisateurs</h1>
+          <p>Gestion des accès et rôles</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ Nouvel utilisateur</button>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Email</th>
+              <th>Rôle</th>
+              <th>Statut</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h2>Nouvel utilisateur</h2>
+      <form id="user-form">
+        <div class="form-group">
+          <label>Nom complet *</label>
+          <input type="text" id="nom" required>
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label>Mot de passe *</label>
+          <input type="password" id="password" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>Rôle</label>
+          <select id="role">
+            <option value="commercial">Commercial</option>
+            <option value="manager">Manager</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script>
+    let currentUser = null;
+    let users = [];
+
+    async function loadUsers() {
+      currentUser = await initSidebar('utilisateurs');
+      if (currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+        document.querySelector('.main-content').innerHTML = '<p>Accès réservé aux administrateurs.</p>';
+        return;
+      }
+      await refreshUsers();
+      document.getElementById('user-form').addEventListener('submit', saveUser);
+    }
+
+    async function refreshUsers() {
+      users = await api.get('/api/users');
+      renderUsers();
+    }
+
+    function renderUsers() {
+      document.getElementById('users-tbody').innerHTML = users.map(u => `
+        <tr>
+          <td><strong>${u.nom}</strong></td>
+          <td>${u.email}</td>
+          <td>${badge(u.role)}</td>
+          <td>${u.actif ? '🟢 Actif' : '🔴 Inactif'}</td>
+          <td>
+            ${currentUser.role === 'admin' && u.id !== currentUser.id ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">Suppr.</button>` : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openModal() {
+      document.getElementById('user-form').reset();
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+    }
+
+    async function saveUser(e) {
+      e.preventDefault();
+      const payload = {
+        nom: document.getElementById('nom').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value
+      };
+      try {
+        await api.post('/api/users', payload);
+        closeModal();
+        await refreshUsers();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Supprimer cet utilisateur ?')) return;
+      try {
+        await api.delete('/api/users/' + id);
+        await refreshUsers();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUDICONE | Forfaits & packs</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body class="public-page">
+  <header class="public-header">
+    <div class="public-brand">
+      <div class="logo">SUDICONE</div>
+      <div class="tagline">Solutions CRM & facturation pour PME</div>
+    </div>
+    <nav class="public-nav">
+      <a href="/services-public.html" class="active">Forfaits</a>
+      <a href="#packs">Packs</a>
+      <a href="#souscrire">Souscrire</a>
+      <a href="#faq">FAQ</a>
+      <a href="/login.html" class="btn btn-secondary">Espace client</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero-section gradient-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Public — Sans connexion</p>
+        <h1>Choisissez votre forfait SUDICONE et souscrivez en ligne</h1>
+        <p>Découvrez nos services et packs sur une page fluide, construite pour les prospects qui veulent s’inscrire, comparer et envoyer leur demande en un clic.</p>
+        <div class="hero-actions">
+          <a href="#services" class="btn btn-primary">Voir les services</a>
+          <a href="#souscrire" class="btn btn-secondary">Souscrire maintenant</a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <div class="hero-card">
+          <div class="hero-card-title">Forfaits clé en main</div>
+          <div class="hero-card-text">Facturation, pipeline, suivi client, workflows, tout est prêt pour digitaliser votre PME.</div>
+          <div class="hero-card-list">
+            <span><i class="bi bi-check2-circle"></i> Packs adaptés</span>
+            <span><i class="bi bi-check2-circle"></i> Souscription en ligne</span>
+            <span><i class="bi bi-check2-circle"></i> Pilotage immédiat</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="services" class="section-block">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Nos forfaits</p>
+          <h2>Services indépendants</h2>
+          <p>Choisissez un service à la carte pour répondre exactement à vos besoins métier.</p>
+        </div>
+      </div>
+      <div class="carousel-wrapper">
+        <button class="carousel-nav left" type="button" onclick="scrollCarousel('services-carousel', -1)"><i class="bi bi-chevron-left"></i></button>
+        <div id="services-carousel" class="carousel-scroll"></div>
+        <button class="carousel-nav right" type="button" onclick="scrollCarousel('services-carousel', 1)"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </section>
+
+    <section id="packs" class="section-block section-alt">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Nos packs</p>
+          <h2>Sélectionnez un pack complet</h2>
+          <p>Nos packs combinent plusieurs services pour un accompagnement complet et une mise en place rapide.</p>
+        </div>
+      </div>
+      <div class="carousel-wrapper">
+        <button class="carousel-nav left" type="button" onclick="scrollCarousel('packs-carousel', -1)"><i class="bi bi-chevron-left"></i></button>
+        <div id="packs-carousel" class="carousel-scroll"></div>
+        <button class="carousel-nav right" type="button" onclick="scrollCarousel('packs-carousel', 1)"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </section>
+
+    <section class="section-block service-highlights">
+      <div class="cards-grid">
+        <article class="feature-card">
+          <div class="icon-circle"><i class="bi bi-speedometer2"></i></div>
+          <h3>Interface rapide</h3>
+          <p>Une page publique qui permet à vos prospects de choisir un service et de s’inscrire sans friction.</p>
+        </article>
+        <article class="feature-card">
+          <div class="icon-circle"><i class="bi bi-file-earmark-text"></i></div>
+          <h3>Saisie complète</h3>
+          <p>Formulaire prospect, détails entreprise, budget, service choisi et demande envoyée en une étape.</p>
+        </article>
+        <article class="feature-card">
+          <div class="icon-circle"><i class="bi bi-graph-up-arrow"></i></div>
+          <h3>Prospects qualifiés</h3>
+          <p>Les informations sont enregistrées dans le CRM afin de relancer immédiatement le lead dans le pipeline.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="souscrire" class="section-block subscribe-section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Souscription</p>
+          <h2>Remplissez votre demande</h2>
+          <p>Choisissez un service ou un pack, puis envoyez votre demande en quelques secondes.</p>
+        </div>
+      </div>
+      <div class="subscribe-layout">
+        <div class="subscribe-form-card">
+          <div class="form-note">Tous les champs marqués d’un astérisque sont obligatoires.</div>
+          <form id="subscribe-form">
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Nom complet *</label>
+                <input type="text" name="nom" id="nom" required>
+              </div>
+              <div class="form-group">
+                <label>Entreprise</label>
+                <input type="text" name="entreprise" id="entreprise">
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Email *</label>
+                <input type="email" name="email" id="email" required>
+              </div>
+              <div class="form-group">
+                <label>Téléphone *</label>
+                <input type="tel" name="telephone" id="telephone" required>
+              </div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Pays</label>
+                <input type="text" name="pays" id="pays" value="Burkina Faso">
+              </div>
+              <div class="form-group">
+                <label>Site web / URL</label>
+                <input type="url" name="site_web" id="site_web" placeholder="https://">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Service sélectionné</label>
+              <select id="selected-service" name="service_id">
+                <option value="">Aucun service sélectionné</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Pack sélectionné</label>
+              <select id="selected-pack" name="pack_id">
+                <option value="">Aucun pack sélectionné</option>
+              </select>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Date de début</label>
+                <input type="date" name="date_debut" id="date_debut">
+              </div>
+              <div class="form-group">
+                <label>Date de fin</label>
+                <input type="date" name="date_fin" id="date_fin">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Tarif HT estimé</label>
+              <input type="number" step="0.01" name="tarif_ht" id="tarif_ht" placeholder="Ex: 150000">
+            </div>
+            <div class="form-group">
+              <label>Message / Besoin</label>
+              <textarea name="message" id="message" rows="5" placeholder="Décrivez votre projet ou votre besoin"></textarea>
+            </div>
+            <div class="form-row-2 align-center">
+              <label class="checkbox-inline"><input type="checkbox" id="renewal" name="renewal"> Renouvellement automatique</label>
+              <button type="submit" class="btn btn-primary">Envoyer ma demande</button>
+            </div>
+            <div id="subscribe-feedback" class="feedback-message"></div>
+          </form>
+        </div>
+        <div class="subscribe-info-card">
+          <h3>Vos prochaines étapes</h3>
+          <ul>
+            <li>1. Choisissez un service ou pack.</li>
+            <li>2. Complétez vos coordonnées.</li>
+            <li>3. Envoyez votre demande.</li>
+            <li>4. Un conseiller SUDICONE vous contacte sous 24h.</li>
+          </ul>
+          <div class="highlight-box">
+            <strong>Besoin d’aide ?</strong>
+            <p>Vous pouvez aussi ouvrir un ticket de démonstration ou demander une présentation personnalisée.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="section-block section-alt faq-section">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Questions fréquentes</p>
+          <h2>Tout ce qu’il faut savoir</h2>
+          <p>Une page simple, complète et adaptée au visiteur qui souhaite souscrire sans blocage.</p>
+        </div>
+      </div>
+      <div class="faq-grid">
+        <details>
+          <summary>Comment ma demande est-elle enregistrée ?</summary>
+          <p>Le formulaire crée un lead prospect dans le CRM et rattache le service ou le pack choisi. L’équipe commerciale retrouve les données immédiatement.</p>
+        </details>
+        <details>
+          <summary>Puis-je choisir plusieurs services ?</summary>
+          <p>Sur cette page, vous pouvez sélectionner un service ou un pack principal. Pour une offre sur-mesure, précisez vos attentes dans le message.</p>
+        </details>
+        <details>
+          <summary>Est-ce gratuit de soumettre ma demande ?</summary>
+          <p>Oui, le formulaire est gratuit. Nous utilisons vos informations uniquement pour répondre à votre besoin.</p>
+        </details>
+        <details>
+          <summary>Dois-je être client pour accéder aux forfaits ?</summary>
+          <p>Non, cette page est publique : clients, prospects, partenaires peuvent consulter et souscrire.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <div id="detail-modal" class="modal-overlay">
+    <div class="modal modal-large">
+      <button class="modal-close" type="button" onclick="closeDetailModal()"><i class="bi bi-x"></i></button>
+      <div id="detail-modal-content"></div>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/services-public.js"></script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pipeline — CRM</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-mount"></div>
+
+    <div class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Pipeline des opportunités</h1>
+          <p>Glissez-déposez les cartes pour changer d'étape</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ Nouvelle opportunité</button>
+      </div>
+
+      <div class="kanban-board" id="kanban-board"></div>
+    </div>
+  </div>
+
+  <!-- Modal Création/Édition -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h2 id="modal-title">Nouvelle opportunité</h2>
+      <form id="opp-form">
+        <input type="hidden" id="opp-id">
+        <div class="form-group">
+          <label>Titre *</label>
+          <input type="text" id="titre" required>
+        </div>
+        <div class="form-group">
+          <label>Contact lié</label>
+          <select id="contact_id"><option value="">— Aucun —</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Montant</label>
+            <input type="number" id="montant" step="0.01" value="0">
+          </div>
+          <div class="form-group">
+            <label>Devise</label>
+            <select id="devise">
+              <option value="XOF">XOF</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Étape</label>
+            <select id="etape">
+              <option value="nouveau">Nouveau</option>
+              <option value="qualification">Qualification</option>
+              <option value="proposition">Proposition</option>
+              <option value="negociation">Négociation</option>
+              <option value="gagne">Gagné</option>
+              <option value="perdu">Perdu</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Probabilité (%)</label>
+            <input type="number" id="probabilite" min="0" max="100" value="10">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Date de clôture prévue</label>
+          <input type="date" id="date_cloture_prevue">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="notes" rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script>
+    const ETAPES = [
+      { key: 'nouveau', label: 'Nouveau' },
+      { key: 'qualification', label: 'Qualification' },
+      { key: 'proposition', label: 'Proposition' },
+      { key: 'negociation', label: 'Négociation' },
+      { key: 'gagne', label: 'Gagné' },
+      { key: 'perdu', label: 'Perdu' }
+    ];
+
+    let opportunites = [];
+    let contacts = [];
+
+    async function loadPipeline() {
+      await initSidebar('pipeline');
+      contacts = await api.get('/api/contacts');
+      document.getElementById('contact_id').innerHTML += contacts.map(c => `<option value="${c.id}">${c.nom}${c.entreprise ? ' — ' + c.entreprise : ''}</option>`).join('');
+
+      await refreshOpportunites();
+      document.getElementById('opp-form').addEventListener('submit', saveOpp);
+    }
+
+    async function refreshOpportunites() {
+      opportunites = await api.get('/api/opportunites');
+      renderKanban();
+    }
+
+    function renderKanban() {
+      const board = document.getElementById('kanban-board');
+      board.innerHTML = ETAPES.map(etape => {
+        const cards = opportunites.filter(o => o.etape === etape.key);
+        const total = cards.reduce((s, c) => s + (c.montant || 0), 0);
+        return `
+          <div class="kanban-col" data-etape="${etape.key}" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, '${etape.key}')">
+            <div class="kanban-col-header">
+              <span>${etape.label} (${cards.length})</span>
+            </div>
+            ${cards.map(c => `
+              <div class="kanban-card" draggable="true" ondragstart="onDragStart(event, ${c.id})" onclick="editOpp(${c.id})">
+                <div class="titre">${c.titre}</div>
+                <div class="contact">${c.contact_nom || 'Sans contact'}</div>
+                <div class="montant">${formatMontant(c.montant, c.devise)}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function onDragStart(e, id) {
+      e.dataTransfer.setData('text/plain', id);
+    }
+    function onDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drag-over');
+    }
+    function onDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+    async function onDrop(e, nouvelleEtape) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      const id = e.dataTransfer.getData('text/plain');
+      await api.put('/api/opportunites/' + id, { etape: nouvelleEtape });
+      await refreshOpportunites();
+    }
+
+    function openModal() {
+      document.getElementById('modal-title').textContent = 'Nouvelle opportunité';
+      document.getElementById('opp-form').reset();
+      document.getElementById('opp-id').value = '';
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    function editOpp(id) {
+      const o = opportunites.find(x => x.id === id);
+      if (!o) return;
+      document.getElementById('modal-title').textContent = 'Modifier l\'opportunité';
+      document.getElementById('opp-id').value = o.id;
+      document.getElementById('titre').value = o.titre;
+      document.getElementById('contact_id').value = o.contact_id || '';
+      document.getElementById('montant').value = o.montant;
+      document.getElementById('devise').value = o.devise;
+      document.getElementById('etape').value = o.etape;
+      document.getElementById('probabilite').value = o.probabilite;
+      document.getElementById('date_cloture_prevue').value = o.date_cloture_prevue || '';
+      document.getElementById('notes').value = o.notes || '';
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+    }
+
+    async function saveOpp(e) {
+      e.preventDefault();
+      const id = document.getElementById('opp-id').value;
+      const payload = {
+        titre: document.getElementById('titre').value,
+        contact_id: document.getElementById('contact_id').value || null,
+        montant: parseFloat(document.getElementById('montant').value) || 0,
+        devise: document.getElementById('devise').value,
+        etape: document.getElementById('etape').value,
+        probabilite: parseInt(document.getElementById('probabilite').value) || 0,
+        date_cloture_prevue: document.getElementById('date_cloture_prevue').value || null,
+        notes: document.getElementById('notes').value
+      };
+
+      try {
+        if (id) {
+          await api.put('/api/opportunites/' + id, payload);
+        } else {
+          await api.post('/api/opportunites', payload);
+        }
+        closeModal();
+        await refreshOpportunites();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    loadPipeline();
+  </script>
+</body>
+</html>

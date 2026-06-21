@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Services — CRM</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-mount"></div>
+    <div class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Catalogue des services</h1>
+          <p>Gérez les services, packs et assignations clients SUDICONE.</p>
+        </div>
+      </div>
+
+      <div class="toolbar" style="flex-wrap: wrap; gap: 12px;">
+        <button class="btn btn-primary" onclick="document.getElementById('assign-modal').classList.add('open')">+ Assigner service / pack</button>
+        <button class="btn btn-secondary" onclick="loadServices()">Rafraîchir</button>
+      </div>
+
+      <div class="stats-grid" id="services-grid"></div>
+
+      <div class="card" style="margin-bottom: 20px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Service</th>
+              <th>Catégorie</th>
+              <th>Prix HT</th>
+              <th>Durée</th>
+            </tr>
+          </thead>
+          <tbody id="services-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Pack</th>
+              <th>Description</th>
+              <th>Prix HT</th>
+              <th>Durée</th>
+              <th>Services inclus</th>
+            </tr>
+          </thead>
+          <tbody id="packs-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="assign-modal">
+    <div class="modal">
+      <h2>Assigner service / pack</h2>
+      <form id="assign-form">
+        <div class="form-group">
+          <label>Client</label>
+          <select id="service-contact"></select>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="assign-type">
+            <option value="service">Service</option>
+            <option value="pack">Pack</option>
+          </select>
+        </div>
+        <div class="form-group" id="service-select-group">
+          <label>Service</label>
+          <select id="service-select"></select>
+        </div>
+        <div class="form-group" id="pack-select-group" style="display:none;">
+          <label>Pack</label>
+          <select id="pack-select"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date de début</label>
+            <input type="date" id="date-debut">
+          </div>
+          <div class="form-group">
+            <label>Date de fin</label>
+            <input type="date" id="date-fin">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Tarif HT</label>
+          <input type="number" id="tarif-ht" step="0.01" value="0">
+        </div>
+        <div class="form-group" id="renew-group">
+          <label>Renouvellement automatique</label>
+          <select id="renew-auto">
+            <option value="1">Oui</option>
+            <option value="0">Non</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeAssignModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Valider l'assignation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/services.js"></script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contacts — CRM</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-mount"></div>
+
+    <div class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Contacts</h1>
+          <p>Prospects, clients et partenaires</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ Nouveau contact</button>
+      </div>
+
+      <div class="toolbar">
+        <input type="text" id="search" placeholder="Rechercher un nom, une entreprise, un email...">
+        <select id="filter-type">
+          <option value="">Tous les types</option>
+          <option value="prospect">Prospects</option>
+          <option value="client">Clients</option>
+          <option value="partenaire">Partenaires</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Entreprise</th>
+              <th>Type</th>
+              <th>Téléphone</th>
+              <th>Email</th>
+              <th>Ville</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="contacts-tbody"></tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display:none">
+          <p>Aucun contact pour le moment. Cliquez sur "Nouveau contact" pour commencer.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Création/Édition -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h2 id="modal-title">Nouveau contact</h2>
+      <form id="contact-form">
+        <input type="hidden" id="contact-id">
+        <div class="form-group">
+          <label>Nom complet *</label>
+          <input type="text" id="nom" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Type</label>
+            <select id="type">
+              <option value="prospect">Prospect</option>
+              <option value="client">Client</option>
+              <option value="partenaire">Partenaire</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Entreprise</label>
+            <input type="text" id="entreprise">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input type="text" id="telephone" placeholder="+226 ...">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ville</label>
+            <input type="text" id="ville" placeholder="Ouagadougou">
+          </div>
+          <div class="form-group">
+            <label>Pays</label>
+            <input type="text" id="pays" value="Burkina Faso">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>SIRET</label>
+            <input type="text" id="siret" placeholder="SIRET client">
+          </div>
+          <div class="form-group">
+            <label>Secteur</label>
+            <input type="text" id="secteur" placeholder="Secteur d'activité">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Site web</label>
+            <input type="text" id="site_web" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>Code client</label>
+            <input type="text" id="code_client" placeholder="SUD-0001">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Responsable</label>
+            <input type="text" id="responsable">
+          </div>
+          <div class="form-group">
+            <label>Statut client</label>
+            <select id="statut_client">
+              <option value="actif">Actif</option>
+              <option value="prospect">Prospect</option>
+              <option value="partenaire">Partenaire</option>
+              <option value="ancien">Ancien</option>
+              <option value="suspendu">Suspendu</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date d'entrée</label>
+            <input type="date" id="date_entree">
+          </div>
+          <div class="form-group">
+            <label>Date de renouvellement</label>
+            <input type="date" id="date_renouvellement">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Mode de paiement</label>
+            <input type="text" id="mode_paiement" placeholder="Virement, Carte, Chèque">
+          </div>
+          <div class="form-group">
+            <label>Note comptable</label>
+            <input type="text" id="note_comptable" placeholder="Rappel comptable">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Note technique</label>
+          <textarea id="note_technique" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="notes" rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script>
+    let contacts = [];
+
+    async function loadContacts() {
+      await initSidebar('contacts');
+      await refreshContacts();
+
+      document.getElementById('search').addEventListener('input', refreshContacts);
+      document.getElementById('filter-type').addEventListener('change', refreshContacts);
+      document.getElementById('contact-form').addEventListener('submit', saveContact);
+    }
+
+    async function refreshContacts() {
+      const q = document.getElementById('search').value;
+      const type = document.getElementById('filter-type').value;
+      const params = new URLSearchParams();
+      if (q) params.set('q', q);
+      if (type) params.set('type', type);
+
+      contacts = await api.get('/api/contacts?' + params.toString());
+      renderContacts();
+    }
+
+    function renderContacts() {
+      const tbody = document.getElementById('contacts-tbody');
+      const emptyState = document.getElementById('empty-state');
+
+      if (contacts.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+      emptyState.style.display = 'none';
+
+      tbody.innerHTML = contacts.map(c => `
+        <tr onclick="editContact(${c.id})">
+          <td><strong>${c.nom}</strong></td>
+          <td>${c.entreprise || '—'}</td>
+          <td>${badge(c.type)}</td>
+          <td>${c.telephone || '—'}</td>
+          <td>${c.email || '—'}</td>
+          <td>${c.ville || '—'}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteContact(${c.id})">Suppr.</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function openModal() {
+      document.getElementById('modal-title').textContent = 'Nouveau contact';
+      document.getElementById('contact-form').reset();
+      document.getElementById('contact-id').value = '';
+      document.getElementById('pays').value = 'Burkina Faso';
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    function editContact(id) {
+      const c = contacts.find(x => x.id === id);
+      if (!c) return;
+      document.getElementById('modal-title').textContent = 'Modifier le contact';
+      document.getElementById('contact-id').value = c.id;
+      document.getElementById('nom').value = c.nom;
+      document.getElementById('type').value = c.type;
+      document.getElementById('entreprise').value = c.entreprise || '';
+      document.getElementById('telephone').value = c.telephone || '';
+      document.getElementById('email').value = c.email || '';
+      document.getElementById('ville').value = c.ville || '';
+      document.getElementById('pays').value = c.pays || 'Burkina Faso';
+      document.getElementById('adresse').value = c.adresse || '';
+      document.getElementById('siret').value = c.siret || '';
+      document.getElementById('secteur').value = c.secteur || '';
+      document.getElementById('site_web').value = c.site_web || '';
+      document.getElementById('code_client').value = c.code_client || '';
+      document.getElementById('responsable').value = c.responsable || '';
+      document.getElementById('statut_client').value = c.statut_client || 'actif';
+      document.getElementById('date_entree').value = c.date_entree || '';
+      document.getElementById('date_renouvellement').value = c.date_renouvellement || '';
+      document.getElementById('mode_paiement').value = c.mode_paiement || '';
+      document.getElementById('note_comptable').value = c.note_comptable || '';
+      document.getElementById('note_technique').value = c.note_technique || '';
+      document.getElementById('notes').value = c.notes || '';
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+    }
+
+    async function saveContact(e) {
+      e.preventDefault();
+      const id = document.getElementById('contact-id').value;
+      const payload = {
+        nom: document.getElementById('nom').value,
+        type: document.getElementById('type').value,
+        entreprise: document.getElementById('entreprise').value,
+        telephone: document.getElementById('telephone').value,
+        email: document.getElementById('email').value,
+        ville: document.getElementById('ville').value,
+        pays: document.getElementById('pays').value,
+        adresse: document.getElementById('adresse').value,
+        siret: document.getElementById('siret').value,
+        secteur: document.getElementById('secteur').value,
+        site_web: document.getElementById('site_web').value,
+        code_client: document.getElementById('code_client').value,
+        responsable: document.getElementById('responsable').value,
+        statut_client: document.getElementById('statut_client').value,
+        date_entree: document.getElementById('date_entree').value,
+        date_renouvellement: document.getElementById('date_renouvellement').value,
+        mode_paiement: document.getElementById('mode_paiement').value,
+        note_comptable: document.getElementById('note_comptable').value,
+        note_technique: document.getElementById('note_technique').value,
+        notes: document.getElementById('notes').value
+      };
+
+      try {
+        if (id) {
+          await api.put('/api/contacts/' + id, payload);
+        } else {
+          await api.post('/api/contacts', payload);
+        }
+        closeModal();
+        await refreshContacts();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteContact(id) {
+      if (!confirm('Supprimer ce contact ? Cette action est irréversible.')) return;
+      await api.delete('/api/contacts/' + id);
+      await refreshContacts();
+    }
+
+    loadContacts();
+  </script>
+</body>
+</html>

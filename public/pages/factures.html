@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Factures & Devis — CRM</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-mount"></div>
+
+    <div class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Factures & Devis</h1>
+          <p>Suivi de la facturation</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ Nouveau document</button>
+      </div>
+
+      <div class="toolbar">
+        <select id="filter-type">
+          <option value="">Tous types</option>
+          <option value="devis">Devis</option>
+          <option value="facture">Factures</option>
+        </select>
+        <select id="filter-statut">
+          <option value="">Tous statuts</option>
+          <option value="brouillon">Brouillon</option>
+          <option value="envoye">Envoyé</option>
+          <option value="paye">Payé</option>
+          <option value="en_retard">En retard</option>
+          <option value="annule">Annulé</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Numéro</th>
+              <th>Type</th>
+              <th>Contact</th>
+              <th>Montant TTC</th>
+              <th>Statut</th>
+              <th>Échéance</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="factures-tbody"></tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display:none">
+          <p>Aucun document. Cliquez sur "Nouveau document" pour créer un devis ou une facture.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Création -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" style="width:600px">
+      <h2>Nouveau document</h2>
+      <form id="facture-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Type</label>
+            <select id="type">
+              <option value="devis">Devis</option>
+              <option value="facture">Facture</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Contact</label>
+            <select id="contact_id"><option value="">— Aucun —</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Taux TVA (%)</label>
+            <input type="number" id="taux_tva" value="18" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Date d'échéance</label>
+            <input type="date" id="date_echeance">
+          </div>
+        </div>
+
+        <label style="font-size:12.5px;font-weight:600;display:block;margin:14px 0 8px">Lignes</label>
+        <div id="lignes-container"></div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addLigne()">+ Ajouter une ligne</button>
+
+        <div style="text-align:right;margin-top:14px;font-size:14px">
+          <div>Total HT : <strong id="total-ht">0 XOF</strong></div>
+          <div>Total TTC : <strong id="total-ttc">0 XOF</strong></div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script>
+    let factures = [];
+    let contacts = [];
+    let ligneCount = 0;
+
+    async function loadFactures() {
+      await initSidebar('factures');
+      contacts = await api.get('/api/contacts');
+      document.getElementById('contact_id').innerHTML += contacts.map(c => `<option value="${c.id}">${c.nom}${c.entreprise ? ' — ' + c.entreprise : ''}</option>`).join('');
+
+      await refreshFactures();
+      document.getElementById('filter-type').addEventListener('change', refreshFactures);
+      document.getElementById('filter-statut').addEventListener('change', refreshFactures);
+      document.getElementById('facture-form').addEventListener('submit', saveFacture);
+
+      addLigne(); // une ligne par défaut
+    }
+
+    async function refreshFactures() {
+      const params = new URLSearchParams();
+      const type = document.getElementById('filter-type').value;
+      const statut = document.getElementById('filter-statut').value;
+      if (type) params.set('type', type);
+      if (statut) params.set('statut', statut);
+
+      factures = await api.get('/api/factures?' + params.toString());
+      renderFactures();
+    }
+
+    function renderFactures() {
+      const tbody = document.getElementById('factures-tbody');
+      const emptyState = document.getElementById('empty-state');
+
+      if (factures.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+      emptyState.style.display = 'none';
+
+      tbody.innerHTML = factures.map(f => `
+        <tr>
+          <td><strong>${f.numero}</strong></td>
+          <td>${f.type === 'facture' ? 'Facture' : 'Devis'}</td>
+          <td>${f.contact_nom || '—'}</td>
+          <td>${formatMontant(f.montant_ttc)}</td>
+          <td>
+            <select onchange="changeStatut(${f.id}, this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:11px;font-weight:600;">
+              ${['brouillon','envoye','paye','en_retard','annule'].map(s => `<option value="${s}" ${f.statut === s ? 'selected' : ''}>${s.replace('_',' ')}</option>`).join('')}
+            </select>
+          </td>
+          <td>${formatDate(f.date_echeance)}</td>
+          <td style="display:flex;gap:6px;justify-content:flex-end">
+            <button class="btn btn-secondary btn-sm" onclick="openPdf(${f.id})" title="Imprimer en PDF"><i class="bi bi-printer"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteFacture(${f.id})">Suppr.</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function changeStatut(id, statut) {
+      await api.put(`/api/factures/${id}/statut`, { statut });
+      await refreshFactures();
+    }
+
+    function addLigne() {
+      ligneCount++;
+      const id = 'ligne-' + ligneCount;
+      const container = document.getElementById('lignes-container');
+      const div = document.createElement('div');
+      div.className = 'form-row';
+      div.id = id;
+      div.style.marginBottom = '8px';
+      div.innerHTML = `
+        <div class="form-group" style="grid-column: span 2">
+          <input type="text" placeholder="Désignation" class="ligne-designation" oninput="recalculer()">
+        </div>
+        <div class="form-group">
+          <input type="number" placeholder="Qté" value="1" class="ligne-qte" oninput="recalculer()">
+        </div>
+        <div class="form-group" style="display:flex; gap:6px;">
+          <input type="number" placeholder="Prix unit." class="ligne-prix" oninput="recalculer()">
+          <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove(); recalculer();">✕</button>
+        </div>
+      `;
+      div.style.gridTemplateColumns = '2fr 1fr 1.3fr';
+      div.style.display = 'grid';
+      div.style.gap = '8px';
+      container.appendChild(div);
+    }
+
+    function recalculer() {
+      const designations = document.querySelectorAll('.ligne-designation');
+      let totalHT = 0;
+      designations.forEach((d, i) => {
+        const qte = parseFloat(document.querySelectorAll('.ligne-qte')[i].value) || 0;
+        const prix = parseFloat(document.querySelectorAll('.ligne-prix')[i].value) || 0;
+        totalHT += qte * prix;
+      });
+      const tva = parseFloat(document.getElementById('taux_tva').value) || 0;
+      const totalTTC = totalHT * (1 + tva / 100);
+      document.getElementById('total-ht').textContent = formatMontant(totalHT);
+      document.getElementById('total-ttc').textContent = formatMontant(totalTTC);
+    }
+
+    document.addEventListener('input', (e) => {
+      if (e.target.id === 'taux_tva') recalculer();
+    });
+
+    function openModal() {
+      document.getElementById('facture-form').reset();
+      document.getElementById('lignes-container').innerHTML = '';
+      ligneCount = 0;
+      addLigne();
+      document.getElementById('taux_tva').value = 18;
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+    }
+
+    async function saveFacture(e) {
+      e.preventDefault();
+      const designations = document.querySelectorAll('.ligne-designation');
+      const lignes = [];
+      designations.forEach((d, i) => {
+        if (!d.value) return;
+        lignes.push({
+          designation: d.value,
+          quantite: parseFloat(document.querySelectorAll('.ligne-qte')[i].value) || 1,
+          prix_unitaire: parseFloat(document.querySelectorAll('.ligne-prix')[i].value) || 0
+        });
+      });
+
+      if (lignes.length === 0) {
+        alert('Ajoutez au moins une ligne avec une désignation.');
+        return;
+      }
+
+      const payload = {
+        type: document.getElementById('type').value,
+        contact_id: document.getElementById('contact_id').value || null,
+        taux_tva: parseFloat(document.getElementById('taux_tva').value) || 18,
+        date_echeance: document.getElementById('date_echeance').value || null,
+        lignes
+      };
+
+      try {
+        await api.post('/api/factures', payload);
+        closeModal();
+        await refreshFactures();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteFacture(id) {
+      if (!confirm('Supprimer ce document ?')) return;
+      await api.delete('/api/factures/' + id);
+      await refreshFactures();
+    }
+
+    function openPdf(id) {
+      const url = `/api/factures/${id}/pdf`;
+      window.open(url, '_blank');
+    }
+
+    loadFactures();
+  </script>
+</body>
+</html>

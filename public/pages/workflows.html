@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workflows — CRM</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-mount"></div>
+    <div class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Workflows internes</h1>
+          <p>Suivez les process clients, technique et communication.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openWorkflowModal()">+ Nouveau workflow</button>
+      </div>
+
+      <div class="stats-grid" id="workflow-stats"></div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Workflow</th>
+              <th>Client</th>
+              <th>Statut</th>
+              <th>Responsable</th>
+              <th>Date début</th>
+            </tr>
+          </thead>
+          <tbody id="workflow-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="workflow-modal">
+    <div class="modal">
+      <h2>Créer un workflow</h2>
+      <form id="workflow-form">
+        <div class="form-group">
+          <label>Titre</label>
+          <input type="text" id="workflow-titre" required>
+        </div>
+        <div class="form-group">
+          <label>Client</label>
+          <select id="workflow-contact"></select>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="workflow-description" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date de début</label>
+            <input type="date" id="workflow-debut">
+          </div>
+          <div class="form-group">
+            <label>Date prévue</label>
+            <input type="date" id="workflow-fin">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Étapes (séparées par ;)</label>
+          <textarea id="workflow-steps" rows="3" placeholder="Ex: Brief client; Création; Validation; Mise en ligne"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeWorkflowModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/workflows.js"></script>
+</body>
+</html>

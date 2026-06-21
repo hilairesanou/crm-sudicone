@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organigramme — CRM</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body>
+  <div class="app-layout">
+    <div id="sidebar-mount"></div>
+    <div class="main-content">
+      <div class="page-header">
+        <div>
+          <h1>Organigramme</h1>
+          <p>Structure des départements et responsables internes.</p>
+        </div>
+      </div>
+      <div class="toolbar" style="flex-wrap: wrap; gap: 12px;">
+        <button class="btn btn-primary" onclick="openDeptModal()">+ Nouveau département</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Département</th>
+              <th>Parent</th>
+              <th>Responsable</th>
+              <th>Téléphone</th>
+            </tr>
+          </thead>
+          <tbody id="departments-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="dept-modal">
+    <div class="modal">
+      <h2>Créer un département</h2>
+      <form id="dept-form">
+        <div class="form-group">
+          <label>Nom</label>
+          <input type="text" id="dept-nom" required>
+        </div>
+        <div class="form-group">
+          <label>Parent</label>
+          <select id="dept-parent"><option value="">— Aucun —</option></select>
+        </div>
+        <div class="form-group">
+          <label>Responsable</label>
+          <input type="text" id="dept-responsable">
+        </div>
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" id="dept-telephone">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="dept-description" rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeDeptModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Créer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/departments.js"></script>
+</body>
+</html>

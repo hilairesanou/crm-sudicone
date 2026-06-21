@@ -1,0 +1,392 @@
+Projet : CRM SUDICONE
+
+Résumé
+-------
+CRM SUDICONE est une application web légère (Node.js + Express + SQLite) conçue pour gérer les contacts, le pipeline de ventes (opportunités), la facturation (devis/factures), les tâches, workflows internes, services/packs vendus et les statistiques analytiques. L'interface front-end est statique (HTML/CSS/JS) servie par Express, l'API REST backend est organisée par routes (auth, contacts, opportunites, factures, taches, users, services, workflows, stats, export). La base de données est SQLite via better-sqlite3.
+
+Objectifs du cahier
+-------------------
+- Documenter l'architecture actuelle
+- Décrire le schéma de données et les entités principales
+- Lister les routes API et leur responsabilité
+- Exposer les fonctionnalités existantes et le flux utilisateur
+- Proposer les fonctionnalités manquantes ou à améliorer (statistiques avancées, automatisation, sécurité, backup, etc.)
+- Fournir un roadmap et priorisation
+- Proposer 10 thèmes de licence basés sur ce projet, avec justification pour chacun
+
+1. Architecture générale
+------------------------
+- Serveur : Node.js + Express
+- Base : SQLite (fichier `data/crm.db`), pilote `better-sqlite3` (synchrone)
+- Auth : sessions Express (`express-session`) stockées en mémoire (MemoryStore par défaut)
+- Templates front : fichiers statiques HTML/CSS/JS dans `public/` (login.html + pages/*.html)
+- Routes API : `server/routes/*.js` (RESTful)
+- Initialisation DB : `server/db/init.js` lit `schema.sql` et exécute `seed.js` pour données tests
+- Uploads : dossier `uploads/` pour pièces jointes
+- Logs : console; pas de logger structuré actuellement
+
+2. Schéma de données (entités principales)
+-----------------------------------------
+- users (id, nom, email, password_hash, role, actif, created_at)
+- contacts (id, type, nom, entreprise, email, telephone, adresse, ville, pays, siret, secteur, site_web, code_client, responsable, statut_client, owner_id, created_at, updated_at)
+- services (id, code, titre, categorie, description, prix_ht, duree_mois, actif)
+- service_packs, pack_services
+- contact_services, contact_packs
+- departments (org chart)
+- workflows, workflow_steps
+- opportunites (pipeline)
+- factures, facture_lignes
+- taches
+- activites (journal)
+
+3. Routes API (point par point)
+-------------------------------
+- `POST /api/auth/login` : connexion (email + mot de passe)
+- `POST /api/auth/logout` : destruction de session
+- `GET /api/auth/me` : info utilisateur connecté
+- `GET/POST/PUT/DELETE /api/contacts` : gestion contacts
+- `GET/POST/PUT/DELETE /api/opportunites` : pipeline
+- `GET/POST/PUT/DELETE /api/factures` : documents (ajout: `/api/factures/:id/pdf` pour export PDF)
+- `GET/POST/PUT/DELETE /api/taches` : tâches
+- `GET /api/stats/*` : endpoints analytiques (dashboard, pipeline-par-etape, ca-mensuel, taches-par-statut, etc.)
+- `GET/POST /api/users` : gestion utilisateurs (admin)
+- `GET/POST /api/services`, `workflows`, `departments`, `export` endpoints
+
+4. Fonctionnalités utilisateur existantes
+----------------------------------------
+- Authentification par session
+- Dashboard avec stats (via Chart.js côté front)
+- CRUD contacts, opportunités, factures/devis, tâches, workflows
+- Génération PDF côté serveur pour factures/devis (nouvelle feature ajoutée)
+- Seed automatique pour remplir de données test
+
+5. Sécurité et points d'attention
+---------------------------------
+- `SESSION_SECRET` par défaut présent dans `.env.example` et `.env` — doit être changé
+- `express-session` utilise MemoryStore : non adapté à la production (utiliser Redis ou autre store)
+- Absence de `helmet`, `csurf`, `rate-limit` — ajouter pour production
+- Vérifier permissions d'accès aux exports (déjà protégés par `requireAuth`, mais possibilité d'ajouter `requireRole` pour restreindre downloads)
+- Passwords stockés hashés (bcrypt)
+- .gitignore exclut `.env` et `data/*.db` (OK)
+
+6. Statistiques & analyses (état actuel)
+---------------------------------------
+Endpoints disponibles :
+- dashboard : cartes chiffrées (totaux contacts, opportunités, factures, CA payé...)
+- pipeline-par-etape : répartition des opportunités
+- contacts-par-type
+- ca-mensuel : CA payé par mois (12 mois)
+- opportunites-mensuel : opportunités créées par mois
+- taches-par-statut / taches-par-priorite
+- services-par-categorie
+- factures-par-statut / devis-par-statut
+- workflows-par-statut
+- performance-commerciaux : CA gagné par utilisateur
+
+Améliorations analytiques possibles :
+- Visualisations interactives (filtrage par période, par commercial, par catégorie)
+- Cohorte clients, churn, LTV moyen
+- Estimation de clôture d'opportunités (analyse simple)
+- Alarmes / notifications basées sur seuils (CA mensuel < cible)
+- Export CSV/XLSX des rapports (exceljs déjà présent)
+
+7. Automatisations proposées (workflow & contact)
+-------------------------------------------------
+- Triggers : création opportunité -> créer tâche de suivi automatique
+- Rappels automatiques avant échéance factures (emails ou notifications)
+- Renewal workflow : contact_services avec renouvellement_auto => générer tâche/opportunité X jours avant
+- Enrichissement contacts via API (ex. RUC/SIRET lookup) lors de création
+- Scoring lead automatique (based on secteur, source, interactions)
+
+8. Roadmap et priorisation
+---------------------------
+Priorité haute (MVP prod-ready):
+- Remplacer MemoryStore par Redis pour sessions
+- Ajouter Helmet + CSRF + rate limiting
+- Configurer logs structurés et sauvegardes automatiques de `data/crm.db`
+- Revoir seed pour éviter mots de passe par défaut en prod
+- Tests unitaires pour routes critiques (auth, factures)
+
+Priorité moyenne:
+- UI : page d'aperçu facture avec bouton imprimer / télécharger
+- Exports XLSX/CSV pour stats
+- Ajout de recherche globale et filtres avancés
+
+Priorité basse / évolutions:
+- Notifications (email/SMS) et rappel échéances
+- ML basique pour scoring opportunités
+- Multi-tenant (si besoin)
+
+9. Extension: fonctionnalités à ajouter avant mise en production
+----------------------------------------------------------------
+- Stockage de fichiers (uploads) en lieu sûr (S3 ou stockage serveur dédié)
+- Système de backup et snapshot pour la DB
+- Plan de montée en charge (migrer SQLite -> Postgres si besoin)
+- Audit des accès et historique (activites amélioré)
+
+10. Propositions de thèmes de licence (10)
+-----------------------------------------
+Chaque thème est proposé avec justification basée sur le projet et ses sujets techniques / métier.
+
+1) Conception et mise en œuvre d'un CRM léger pour PME en Afrique de l'Ouest
+   - Pourquoi : projet est déjà ciblé sur contexte BF; sujet large couvrant architecture, local constraints (connectivité, sauvegarde), et UX adaptée.
+
+2) Automatisation des relances clients et réduction de l'impayé par workflows programmés
+   - Pourquoi : le projet possède factures, échéances et workflows — bon socle pour étudier l'efficacité d'automations.
+
+3) Analyse prédictive du pipeline commercial : prédire la probabilité de succès d'une opportunité
+   - Pourquoi : le modèle opportunités inclut `etape`, `probabilite`, `montant` => dataset synthétique disponible pour ML expérimentations.
+
+4) Visualisation et tableaux de bord décisionnels pour PME : conception UX et performance
+   - Pourquoi : dashboard existant; sujet porte sur conception d'indicateurs, filtrage et performances front/back.
+
+5) Migration d'un backend SQLite vers PostgreSQL pour montée en charge : étude de coût et plan de migration
+   - Pourquoi : architecture actuelle en SQLite; intéressant pour mémoire technique sur migration et compatibilité SQL.
+
+6) Sécurisation d'une application Node.js: gestion des sessions, protection CSRF et durcissement pour la production
+   - Pourquoi : plusieurs points de sécurité à améliorer (session store, helmet, csurf) — sujet pratique.
+
+7) Intégration d'un système de facturation et génération PDF conformes aux normes locales
+   - Pourquoi : facturation, génération PDF et formatage monétaire sont déjà présents; approfondir conformité fiscale/format.
+
+8) Conception d'un module de scoring et qualification des leads basé sur règles et analyse des données
+   - Pourquoi : utile pour prioriser opportunités; combine business logic et analyse métier.
+
+9) Exportation et interopérabilité des données (CSV/XLSX, intégration ERP): design et implications
+   - Pourquoi : exceljs déjà installé; sujet pertinent pour PME souhaitant intégrer CRM et outils comptables.
+
+10) Étude d'impact d'une interface offline-first pour CRM sur zones à connexion intermittente
+   - Pourquoi : contexte BF, SQLite local + besoin offline suit naturellement; sujet sur PWA, synchronisation, conflits.
+
+11. Format du livrable demandé
+-----------------------------
+- Ce cahier est disponible en `CAHIER_PROJET.txt` à la racine du projet.
+- Il décrit les fonctionnalités actuelles, les routes API et les axes d'amélioration.
+
+Prochaines actions proposées
+---------------------------
+- Compléter `CAHIER_PROJET.txt` avec diagrammes ERD et maquettes d'export PDF.
+- Mettre à jour le `README.md` avec le détail de l'endpoint PDF et une courte notice d'usage.
+- Préparer un plan d'assurance qualité et checklist sécurité pour mise en production.
+
+Que voulez-vous que je fasse maintenant ?
+Projet : CRM — SUDICONE (crm-sudicone)
+
+Résumé du projet
+----------------
+CRM interne développé en Node.js + Express avec une base SQLite (better-sqlite3). Objectif : gérer contacts, pipeline/opportunités, factures/devis, tâches, workflows internes, services/packs, et fournir un tableau de bord avec statistiques et exports (PDF, Excel). Le frontend est statique (HTML/CSS/JS) servi depuis `public/`.
+
+Principales fonctionnalités existantes
+-------------------------------------
+- Authentification basée sur sessions (`express-session`), rôles : `admin`, `manager`, `commercial`.
+- CRUD contacts (prospects/clients/partenaires) avec champs commerciaux et comptables.
+- Pipeline opportunités (étapes, probabilité, owner, montant).
+- Factures & devis avec lignes, calcul HT/TTC, statuts, génération PDF côté serveur (PDFKit).
+- Tâches (assignation, priorité, échéance).
+- Workflows internes (workflow + étapes) pour suivi projet/process.
+- Services et packs (catalogue, affectation aux contacts).
+- Journal d'activité (`activites`) utilisé par `utils/activite.js`.
+- Endpoints REST dans `server/routes/` (auth, contacts, opportunites, factures, taches, stats, users, services, workflows, departments, export).
+- Frontend simple : pages HTML dans `public/pages/`, API client dans `public/js/common.js`.
+
+Architecture & composants
+-------------------------
+- Entrée : `server/app.js` (Express) — configure middlewares, sessions, routes et services statiques.
+- DB : `server/db/connection.js` (better-sqlite3), fichier DB : `data/crm.db`.
+- Schéma : `server/db/schema.sql` définit tables : users, contacts, services, service_packs, pack_services, contact_services, contact_packs, departments, workflows, workflow_steps, opportunites, factures, facture_lignes, taches, activites, indexes.
+- Initialisation & seed : `server/db/init.js` et `server/db/seed.js` créent tables et insèrent données de test (100 contacts, opportunités, factures, etc.).
+- Middleware : `server/middleware/auth.js` (requireAuth, requireRole).
+- Utilitaires : `server/utils/activite.js` pour journaliser actions.
+- Génération PDF : ajoutée dans `server/routes/factures.js` (PDFKit) — header Sudicone, mise en page stylée, tableau lignes, total.
+
+Résumé des routes (extrait)
+---------------------------
+- `POST /api/auth/login` — connexion
+- `POST /api/auth/logout` — déconnexion
+- `GET /api/auth/me` — profil connecté
+- `GET/POST/PUT/DELETE /api/contacts` — contacts
+- `GET/POST/PUT/DELETE /api/opportunites` — opportunités
+- `GET/POST/PUT/DELETE /api/factures` — factures/devis
+- `GET /api/factures/:id/pdf` — export PDF imprimable
+- `GET/POST/PUT/DELETE /api/taches` — tâches
+- `GET /api/workflows` — workflows
+- `GET /api/stats/*` — endpoints statistiques (dashboard, ca-mensuel, pipeline-par-etape, etc.)
+- `GET/POST/PUT/DELETE /api/users` — gestion utilisateurs (admin)
+
+Base de données — points clés
+----------------------------
+- Utilise `better-sqlite3` (API synchrone) — simplicité et performances locales.
+- Contraintes et checks dans `schema.sql` (types, enums pour statuts/roles).
+- Indexes pour performances sur colonnes souvent filtrées (owner_id, etape, statut, etc.).
+
+Sécurité & configuration
+------------------------
+- `SESSION_SECRET` dans `.env` — doit être changé en production.
+- Environnement actuel : session en mémoire (MemoryStore) — non recommandé en production, utiliser Redis ou store persistant.
+- Pas de `helmet` / pas de CSRF actuellement — prévoir ajout `helmet`, `csurf` et rate-limiting.
+- `.gitignore` exclut `.env` et fichiers DB ; bon point.
+
+Points opérationnels & déploiement
+----------------------------------
+- Start local : `npm install`, `cp .env.example .env`, `npm run initdb`, `npm start`.
+- Recommandé en production : PM2 / systemd + reverse proxy nginx + HTTPS (Certbot) + session store (Redis) + sauvegardes régulières de `data/crm.db`.
+
+Testing & qualité
+-----------------
+- Aucun test automatisé présent (unitaires / intégration). Ajout recommandé : tests pour routes critiques (auth, factures, export), scripts linting.
+
+Fonctionnalités d'analyse, stats et automatisation (état & extension)
+------------------------------------------------------------------------
+Fonctionnalités déjà implémentées :
+- Endpoints statistiques : dashboard chiffré, CA mensuel, opportunités par mois, répartition contacts, taches par statut, services par catégorie, factures/devis par statut, performance commerciaux.
+- Journal d'activités pour historiser actions.
+
+Extensions recommandées (à ajouter maintenant ou roadmap) :
+1) Tableaux de bord personnalisables : widgets par utilisateur, filtres par période, comparaison inter-années.
+2) Alertes et notifications : email/Slack pour factures en retard, tâches échues, opportunités gagnées.
+3) Rapports programmés : export PDF/Excel périodique (mensuel CA, pipeline) via un scheduler (cron/PM2 cron)
+4) Segmentation & campagnes : segmenter contacts et pousser automatisations (envoi d'email, création de tâche de relance).
+5) Automations CRM (workflows) : rules engine simple (si opportunité->étape=proposition ET date_cloture proche -> créer tâche relance).
+6) Import/Export améliorés : import CSV/Excel contacts/opportunités et export XLSX enrichi (ExcelJS déjà présent).
+7) Auth & SSO : intégration OAuth2/LDAP pour déploiement entreprise.
+8) Permissions avancées : ACL finement granulaires (ressources + opérations).
+9) Historique & versioning : conserver versions des factures/opportunités (audit trails).
+10) Multi-devise et conversion : support étendu des devises avec taux FX.
+
+Architecture d'automatisation et workflow proposée
+-------------------------------------------------
+- Moteur d'automatisation léger (ex: table `automations` + triggers cron) : conditions (query simplifiée) + actions (envoyer email, créer tâche, changer statut) ; exécution via tâche planifiée (node-cron ou job worker).
+- Workflows complexes : stocker templates de workflows, étapes, actions automatisées inter-étapes, assignations automatiques selon role/department.
+
+Scalabilité et montée en charge
+-------------------------------
+- SQLite est adapté pour un usage mono-instance. Pour montée en charge, migrer vers PostgreSQL/MySQL.
+- Session store : remplacer MemoryStore par Redis.
+- Architecturer API pour montée horizontale derrière nginx/PM2.
+
+Documentation & maintenance
+---------------------------
+- Ajouter README détaillé (ajouté : endpoints, initdb, sécurité). Documenter schema.sql et conventions (naming, owners).
+- Changelog et guide de contribution + tests et CI (GitHub Actions).
+
+Roadmap priorisée (court/moyen terme)
+------------------------------------
+- Court (0–2 mois) : sécuriser sessions (Redis), ajouter `helmet`, limiter rate, documenter endpoints, ajouter bouton PDF (terminé), tests basiques.
+- Moyen (2–6 mois) : automatisations simples (cron rules), notifications (email via nodemailer), rapports programmés, import CSV.
+- Long (6–12 mois) : migration BD relationnelle, SSO, ACL avancée, multi-tenant si besoin.
+
+Fichiers importants (emplacement)
+---------------------------------
+- `server/app.js` — point d'entrée
+- `server/db/schema.sql` — schéma DB
+- `server/db/init.js`, `server/db/seed.js` — init + seed
+- `server/db/connection.js` — connexion DB
+- `server/routes/*.js` — API
+- `server/middleware/auth.js` — auth
+- `public/pages/*.html` & `public/js/common.js` — frontend
+
+10 thèmes possibles pour une licence (basés sur ce projet)
+--------------------------------------------------------
+Pour chaque thème, voici le périmètre, les objectifs, les livrables attendus et la valeur ajoutée.
+
+1) "Conception et évaluation d'un moteur d'automatisation CRM léger pour PME"
+   - Périmètre : développer un module d'automatisation qui s'intègre au CRM SUDICONE. Ce module doit pouvoir stocker des règles, détecter des événements métier et exécuter des actions automatiques. Par exemple : relancer un contact quand une facture est en retard, affecter une tâche quand une opportunité passe en phase de négociation, ou envoyer un email de confirmation après création d'un devis.
+   - Objectifs : démontrer la réduction du travail manuel, l'amélioration de la réactivité commerciale et l'impact sur le taux de conversion. Mesurer le gain de temps des utilisateurs et la fiabilité des process automatisés.
+   - Livrables : implémentation technique du moteur d'automatisation, interface de configuration simple, cas d'usage métier documentés, métriques avant/après. Rapport détaillant la conception, l'architecture, les scénarios et les résultats d'évaluation.
+   - Pourquoi : le projet contient déjà des workflows, des tâches et des données de facturation. C'est donc un contexte concret pour ajouter et mesurer des automations CRM.
+
+2) "Migration d'un CRM SQLite vers PostgreSQL : stratégies et performance"
+   - Périmètre : analyser le passage du stockage SQLite à PostgreSQL pour SUDICONE. Cela inclut la conversion du schéma, l'adaptation des requêtes SQL, la gestion des transactions, des contraintes et des index.
+   - Objectifs : évaluer les avantages et inconvénients de chaque base, mesurer la performance sur un ensemble d'opérations courantes (CRUD contacts, création d'opportunités, génération de rapports, export PDF), et proposer une stratégie de migration sans interruption.
+   - Livrables : plan de migration, scripts de conversion de schéma et de données, benchmark comparatif, recommandations techniques et opérationnelles.
+   - Pourquoi : SQLite est bien pour une application légère, mais le CRM deviendra plus critique et volumineux. Ce thème permet d'aborder la montée en charge et la robustesse.
+
+3) "Tableaux de bord analytiques pour PME : conception et visualisation des KPI CRM"
+   - Périmètre : enrichir le CRM avec une suite de tableaux de bord interactifs. Cela concerne la définition des KPI, la collecte de données, la construction de visualisations (chiffres clés, graphiques, camemberts et séries temporelles) et l'ergonomie.
+   - Objectifs : déterminer quels indicateurs sont les plus utiles pour un manager PME, améliorer l'interprétation des données et faciliter les décisions commerciales.
+   - Livrables : maquettes UI/UX, implémentation des dashboards dans le front-end, nouveaux endpoints statistiques si besoin, étude sur l'usage et la pertinence des KPI.
+   - Pourquoi : le CRM a déjà des endpoints statistiques, mais il manque une vision cohérente et accessible des indicateurs actionnables.
+
+4) "Sécurisation d'une application Node.js/Express : étude de cas sur un CRM"
+   - Périmètre : réaliser un audit et un renforcement de la sécurité du CRM. Inclure l'authentification, la gestion des sessions, la protection contre CSRF/XSS, le stockage des secrets, le durcissement des cookies et le suivi des accès.
+   - Objectifs : transformer SUDICONE en application plus sûre pour un usage réel, en identifiant les failles, en corrigeant les vulnérabilités et en documentant les bonnes pratiques.
+   - Livrables : rapport d'audit, patchs de sécurité (`helmet`, `csurf`, `express-rate-limit`, meilleure gestion des sessions), guide de déploiement sécurisé, tests de validation.
+   - Pourquoi : un CRM traite des données sensibles clients. Ce thème est pertinent car il prend appui sur un projet existant nécessitant des améliorations de sécurité.
+
+5) "Impact des workflows automatisés sur le suivi client : expérience contrôlée"
+   - Périmètre : concevoir des workflows métier automatisés dans le CRM et mesurer leur impact sur le suivi client. Un workflow peut déclencher des actions comme des relances, des rappels de tâches ou des changements de statut.
+   - Objectifs : mettre en place des scénarios A/B comparant traitement manuel vs traitement automatisé, puis analyser les effets sur le temps de conversion, le taux de réponse et la satisfaction interne.
+   - Livrables : module workflow, scénario expérimental, collecte de données, analyse statistique des résultats, recommandations.
+   - Pourquoi : le CRM inclut déjà des workflows et des contacts. Ce thème permet d'évaluer qualitativement et quantitativement les bénéfices de l'automatisation.
+
+6) "Conception d'un module de génération documentaire (PDF/XLSX) professionnel pour CRM"
+   - Périmètre : approfondir et professionnaliser les exports de documents du CRM : factures, devis, rapports d'activité, tableaux de bord Excel.
+   - Objectifs : produire des documents de haute qualité visuelle et fonctionnelle, gérer l'internationalisation et la personnalisation, et vérifier l'usage dans le cycle commercial.
+   - Livrables : templates PDF/XLSX, optimisation de génération, tests de rendu, documentation sur la personnalisation, cas d'utilisation.
+   - Pourquoi : le CRM génère déjà des PDF et dispose d'ExcelJS, ce qui permet de monter en qualité sur la production documentaire.
+
+7) "Approche DevOps pour déploiement d'un CRM Node.js sur VPS : CI/CD, sauvegarde, monitoring"
+   - Périmètre : définir une chaîne de déploiement pour le CRM, du développement au production, sur VPS. Inclure CI/CD, gestion des versions, sauvegarde, monitoring, log management et reprise après incident.
+   - Objectifs : rendre le CRM déployable de manière fiable, automatiser les mises à jour, assurer l'intégrité des données et la disponibilité du service.
+   - Livrables : pipeline CI/CD, scripts de déploiement, documentation d'exploitation, solution de sauvegarde/monitoring, rapport d'architecture.
+   - Pourquoi : le projet doit être déployé de façon professionnelle pour être exploitable en entreprise.
+
+8) "Recommandation système pour la montée en charge d'un CRM local : benchmark et architecture"
+   - Périmètre : mesurer les performances du CRM actuel, identifier les goulots d'étranglement et proposer une architecture évolutive (Redis, Postgres, workers, load balancing).
+   - Objectifs : évaluer le comportement sous charge, proposer des améliorations ciblées et estimer les gains de performance.
+   - Livrables : benchmark de charge, comparaison de configurations, architecture recommandée, plan de migration.
+   - Pourquoi : un CRM peut rapidement dépasser un prototype, ce thème analyse la transition vers un système plus robuste.
+
+9) "Personnalisation et segmentation clients : moteur de règles pour campagnes marketing intégrées"
+   - Périmètre : ajouter un module de segmentation des contacts et un moteur de règles pour activer des campagnes marketing (emails, prises de contact, tâches de relance) directement depuis le CRM.
+   - Objectifs : permettre des ciblages dynamiques, automatiser la préparation et l'exécution de campagnes, et mesurer la performance par segment.
+   - Livrables : interface de segmentation, règles de ciblage, exécution de campagnes, rapport ROI.
+   - Pourquoi : un CRM doit servir à engager les bons clients au bon moment, et le projet dispose des données nécessaires à cette personnalisation.
+
+10) "Conception d'un score simple des opportunités à partir des données CRM"
+   - Périmètre : exploiter les données existantes des opportunités pour construire un score qui classe les chances de réussite.
+   - Objectifs : définir un processus de préparation des données, tester un algorithme simple (régression logistique ou arbre de décision), intégrer le score dans le CRM et mesurer son utilité.
+   - Livrables : dataset prétraité, score calculé, interface de score, évaluation de performance, recommandations d'usage.
+   - Pourquoi : la valeur ajoutée est grande pour les commerciaux, et le projet fournit déjà les données de base pour un proof-of-concept.
+
+11) "Analyse de churn et rétention client à partir des données CRM"
+   - Périmètre : définir et calculer des métriques de churn et de rétention clients en utilisant les informations de contact, opportunités, factures et statut clients. Construire des rapports qui identifient les segments à risque et les drivers de perte.
+   - Objectifs : produire un modèle de churn, évaluer les facteurs associés à la perte de clients, recommander des actions de rétention ciblées.
+   - Livrables : pipelines d'analyse de données, tableaux de bord de churn, segmentation des clients à risque, rapport d'analytique et recommandations.
+   - Pourquoi : pour un data analyst, ce thème relie l'analyse comportementale client aux résultats financiers, et permet de transformer des données CRM en actions concrètes.
+
+12) "Segmentation comportementale et scoring des clients pour optimiser les campagnes commerciales"
+   - Périmètre : élaborer une segmentation clients multi-dimensionnelle basée sur l'historique d'achat, le statut client, le comportement de paiement, les interactions et les services utilisés.
+   - Objectifs : créer des segments de type "clients fidèles", "prospects chauds", "clients à risque" ; construire un score de priorité pour guider les commerciaux.
+   - Livrables : matrice de segmentation, modèle de scoring, dashboards de suivi, cas d'utilisation pour campagnes marketing et relances.
+   - Pourquoi : ce thème est central pour un data analyst car il combine catégorisation, feature engineering et utilisation de la segmentation pour améliorer l'efficacité commerciale.
+
+13) "Construction d'un data warehouse CRM pour reporting avancé et intégration analytique"
+   - Périmètre : concevoir une architecture analytique parallèle au CRM, avec des tables de faits et dimensions adaptées aux rapports commerciaux et financiers.
+   - Objectifs : centraliser les données CRM dans un data warehouse, optimiser les requêtes analytiques, permettre des rapports ad hoc et des exports vers des outils BI.
+   - Livrables : schéma étoile/fait, scripts ETL simples, exemples de rapports analytiques, recommandations d'architecture.
+   - Pourquoi : un data analyst a besoin d'un environnement dédié à l'analyse plutôt qu'une application transactionnelle directe ; ce thème montre la valeur d'une architecture BI autour du CRM.
+
+14) "Prévision du chiffre d'affaires et du pipeline par séries temporelles"
+   - Périmètre : utiliser les données historiques de facturation et d'opportunités pour modéliser le chiffre d'affaires futur et les tendances du pipeline.
+   - Objectifs : construire des modèles de prévision (ARIMA/Prophet/simple expo smoothing), analyser les performances et proposer des prévisions mensuelles/quarterly.
+   - Livrables : pipeline de préparation des séries temporelles, modèles de prévision, rapports de performance, visualisation de la trajectoire CA.
+   - Pourquoi : ce thème est très pertinent pour un data analyst car il relie l'analyse des données à des prévisions business à forte valeur pour les décideurs.
+
+Pour chaque thème, livrables possibles
+-------------------------------------
+- Prototype fonctionnel intégré au projet
+- Rapport méthodologique (design, implémentation, tests, résultats)
+- Jeux de tests/benchmarks ou datasets
+- Recommandations opérationnelles pour déploiement
+
+Conclusion & prochaines étapes proposées
+---------------------------------------
+1. Choisir un thème pour rédiger un plan de mémoire détaillé (chapitres, tâches, calendrier).
+2. Transformer ce cahier en `README_LICENSE_PROPOSAL.md` si un format Markdown est souhaité.
+3. Créer les tickets correspondants dans le repo pour démarrer rapidement.
+
+Fichier : `CAHIER_PROJET.txt`
+
+
+Fichier créé : `CAHIER_PROJET.txt` (racine du projet).

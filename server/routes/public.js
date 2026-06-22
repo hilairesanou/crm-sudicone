@@ -50,7 +50,7 @@ router.post('/leads', (req, res) => {
     if (service) {
       db.prepare(
         'INSERT INTO contact_services (contact_id, service_id, date_debut, date_fin, tarif_ht, renouvellement_auto) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(contactId, service_id, date_debut || null, date_fin || null, tarif_ht ?? service.prix_ht || 0, renouvellement_auto ? 1 : 0);
+      ).run(contactId, service_id, date_debut || null, date_fin || null, (tarif_ht ?? service.prix_ht) || 0, renouvellement_auto ? 1 : 0);
     }
   }
 
@@ -59,7 +59,7 @@ router.post('/leads', (req, res) => {
     if (pack) {
       db.prepare(
         'INSERT INTO contact_packs (contact_id, pack_id, date_debut, date_fin, tarif_ht) VALUES (?, ?, ?, ?, ?)'
-      ).run(contactId, pack_id, date_debut || null, date_fin || null, tarif_ht ?? pack.prix_ht || 0);
+      ).run(contactId, pack_id, date_debut || null, date_fin || null, (tarif_ht ?? pack.prix_ht) || 0);
     }
   }
 

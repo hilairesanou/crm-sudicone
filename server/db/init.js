@@ -43,6 +43,8 @@ function migrateContactsTable() {
     ['updated_at', "TEXT DEFAULT (datetime('now'))"]
   ];
 
+
+
   contactColumns.forEach(([column, definition]) => {
     addColumnIfMissing('contacts', column, definition);
   });
@@ -72,6 +74,25 @@ if (userCount === 0) {
 } else {
   console.log('✓ Des utilisateurs existent déjà, aucun compte créé.');
 }
+
+// Migration : création de la table notifications si absente
+db.exec(`
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL,
+    titre TEXT NOT NULL,
+    message TEXT,
+    contact_id INTEGER REFERENCES contacts(id) ON DELETE CASCADE,
+    opportunite_id INTEGER REFERENCES opportunites(id) ON DELETE CASCADE,
+    tache_id INTEGER REFERENCES taches(id) ON DELETE CASCADE,
+    destinataire_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    lu INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_notifications_destinataire ON notifications(destinataire_id)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_notifications_lu ON notifications(lu)`);
+console.log('✓ Table notifications vérifiée.');
 
 // Injection de données fictives pour tests et stats
 try {

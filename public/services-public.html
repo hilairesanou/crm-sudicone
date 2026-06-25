@@ -3,226 +3,904 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SUDICONE | Forfaits & packs</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <title>SUDICONE — Communication & Digital</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bleu:    #0b2545;
+      --bleu2:   #1b3a6b;
+      --or:      #c9a84c;
+      --or-clair:#f0d98a;
+      --blanc:   #ffffff;
+      --gris-bg: #f7f8fa;
+      --gris:    #6b7280;
+      --bord:    #e5e7eb;
+      --texte:   #1a1a2e;
+      --rayon:   10px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: var(--texte);
+      background: var(--blanc);
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────────────── */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bleu);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 64px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    .header-brand {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .header-logo {
+      font-size: 1.4rem; font-weight: 800; color: var(--blanc);
+      letter-spacing: 2px;
+    }
+    .header-logo span {
+      display: block; font-size: 0.65rem; font-weight: 400;
+      color: var(--or-clair); letter-spacing: 1px; margin-top: -4px;
+    }
+    .header-nav {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .header-nav a {
+      color: rgba(255,255,255,0.75); text-decoration: none;
+      font-size: 0.88rem; padding: 6px 14px; border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .header-nav a:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .header-nav a.active { color: var(--or-clair); font-weight: 600; }
+    .btn-header {
+      background: var(--or); color: var(--bleu) !important;
+      font-weight: 700 !important; padding: 8px 18px !important;
+      border-radius: 6px !important;
+    }
+    .btn-header:hover { background: var(--or-clair) !important; }
+
+    /* ── HERO ────────────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, var(--bleu) 0%, var(--bleu2) 100%);
+      padding: 80px 40px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
+      align-items: center; min-height: 480px;
+    }
+    .hero-eyebrow {
+      display: inline-block;
+      background: rgba(201,168,76,0.2); color: var(--or-clair);
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 2px;
+      text-transform: uppercase; padding: 4px 12px; border-radius: 999px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: 2.4rem; font-weight: 800; color: var(--blanc);
+      line-height: 1.2; margin-bottom: 16px;
+    }
+    .hero h1 em {
+      color: var(--or-clair); font-style: normal;
+    }
+    .hero-desc {
+      color: rgba(255,255,255,0.75); font-size: 1rem;
+      margin-bottom: 32px; max-width: 480px;
+    }
+    .hero-actions {
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: var(--or); color: var(--bleu);
+      font-weight: 700; padding: 12px 24px;
+      border-radius: var(--rayon); border: none; cursor: pointer;
+      font-size: 0.9rem; text-decoration: none;
+      transition: background 0.2s, transform 0.1s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary:hover { background: var(--or-clair); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent; color: var(--blanc);
+      font-weight: 600; padding: 12px 24px;
+      border-radius: var(--rayon); border: 2px solid rgba(255,255,255,0.3);
+      cursor: pointer; font-size: 0.9rem; text-decoration: none;
+      transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-outline:hover {
+      border-color: var(--or-clair); color: var(--or-clair);
+    }
+    .hero-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px; padding: 32px;
+      backdrop-filter: blur(8px);
+    }
+    .hero-stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+      margin-top: 20px;
+    }
+    .hero-stat {
+      text-align: center;
+    }
+    .hero-stat .chiffre {
+      font-size: 2rem; font-weight: 800; color: var(--or-clair);
+      display: block;
+    }
+    .hero-stat .libelle {
+      font-size: 0.78rem; color: rgba(255,255,255,0.6);
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .hero-card-title {
+      font-size: 1rem; font-weight: 700; color: var(--blanc);
+      margin-bottom: 8px;
+    }
+    .hero-card-desc {
+      font-size: 0.85rem; color: rgba(255,255,255,0.65);
+      line-height: 1.6;
+    }
+    .hero-checks {
+      margin-top: 20px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .hero-check {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.85rem; color: rgba(255,255,255,0.8);
+    }
+    .hero-check i { color: var(--or-clair); font-size: 1rem; }
+
+    /* ── SECTIONS ────────────────────────────────────────────────── */
+    .section { padding: 72px 40px; }
+    .section-alt { background: var(--gris-bg); }
+    .section-head {
+      text-align: center; margin-bottom: 48px;
+    }
+    .eyebrow {
+      display: inline-block;
+      color: var(--or); font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .section-head h2 {
+      font-size: 1.9rem; font-weight: 800; color: var(--bleu);
+      margin-bottom: 10px;
+    }
+    .section-head p {
+      color: var(--gris); max-width: 560px; margin: 0 auto;
+      font-size: 0.95rem;
+    }
+
+    /* ── PROCESS ─────────────────────────────────────────────────── */
+    .process-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+      max-width: 900px; margin: 0 auto;
+    }
+    .process-step {
+      text-align: center; padding: 24px 16px;
+    }
+    .process-num {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--bleu); color: var(--blanc);
+      font-weight: 800; font-size: 1.1rem;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .process-step h4 {
+      font-size: 0.9rem; font-weight: 700; color: var(--bleu);
+      margin-bottom: 6px;
+    }
+    .process-step p {
+      font-size: 0.8rem; color: var(--gris); line-height: 1.5;
+    }
+
+    /* ── CARDS SERVICES / PACKS ──────────────────────────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .service-card {
+      background: var(--blanc); border: 1px solid var(--bord);
+      border-radius: 12px; padding: 24px;
+      transition: box-shadow 0.2s, transform 0.2s;
+      display: flex; flex-direction: column;
+    }
+    .service-card:hover {
+      box-shadow: 0 8px 24px rgba(11,37,69,0.1);
+      transform: translateY(-2px);
+    }
+    .service-card.featured {
+      border-color: var(--or); box-shadow: 0 0 0 2px var(--or);
+    }
+    .card-badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 999px; font-size: 0.72rem; font-weight: 600;
+      background: #e8eef7; color: var(--bleu2);
+      margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .card-badge.gold {
+      background: #fef3c7; color: #92400e;
+    }
+    .card-badge.recommended {
+      background: var(--or); color: var(--bleu);
+    }
+    .service-card h3 {
+      font-size: 1.05rem; font-weight: 700; color: var(--bleu);
+      margin-bottom: 8px;
+    }
+    .service-card p {
+      font-size: 0.85rem; color: var(--gris);
+      flex: 1; margin-bottom: 16px; line-height: 1.6;
+    }
+    .card-price {
+      display: flex; align-items: baseline; gap: 6px;
+      margin-bottom: 16px;
+    }
+    .card-price strong {
+      font-size: 1.3rem; font-weight: 800; color: var(--bleu);
+    }
+    .card-price span {
+      font-size: 0.78rem; color: var(--gris);
+    }
+    .pack-services-list {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+    }
+    .pack-services-list span {
+      font-size: 0.72rem; background: var(--gris-bg);
+      color: var(--bleu2); padding: 2px 8px; border-radius: 999px;
+      font-weight: 500;
+    }
+    .card-actions {
+      display: flex; gap: 8px;
+    }
+    .btn-choisir {
+      flex: 1; background: var(--bleu); color: var(--blanc);
+      border: none; border-radius: 8px; padding: 10px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-choisir:hover { background: var(--bleu2); }
+    .btn-choisir.selected {
+      background: #16a34a;
+    }
+    .btn-detail {
+      background: var(--gris-bg); color: var(--bleu);
+      border: 1px solid var(--bord); border-radius: 8px; padding: 10px 14px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-detail:hover { background: #e8eef7; }
+
+    /* ── FORMULAIRE ──────────────────────────────────────────────── */
+    .form-wrapper {
+      display: grid; grid-template-columns: 1fr 380px; gap: 40px;
+      align-items: start; max-width: 1100px; margin: 0 auto;
+    }
+    .form-card {
+      background: var(--blanc); border: 1px solid var(--bord);
+      border-radius: 16px; padding: 36px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .form-card h3 {
+      font-size: 1.3rem; font-weight: 800; color: var(--bleu);
+      margin-bottom: 6px;
+    }
+    .form-card .form-subtitle {
+      color: var(--gris); font-size: 0.88rem; margin-bottom: 28px;
+    }
+    .form-section-title {
+      font-size: 0.75rem; font-weight: 700; color: var(--gris);
+      text-transform: uppercase; letter-spacing: 1.5px;
+      margin: 24px 0 14px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--bord);
+    }
+    .form-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      margin-bottom: 16px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 0.82rem; font-weight: 600;
+      color: var(--bleu); margin-bottom: 6px;
+    }
+    .form-group label .required { color: #ef4444; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid var(--bord); border-radius: 8px;
+      font-size: 0.88rem; color: var(--texte);
+      background: var(--blanc); transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none; border-color: var(--bleu2);
+      box-shadow: 0 0 0 3px rgba(27,58,107,0.1);
+    }
+    .form-group textarea { resize: vertical; min-height: 100px; }
+
+    /* Sélection visuelle du service/pack */
+    .selection-box {
+      background: var(--gris-bg); border: 2px dashed var(--bord);
+      border-radius: 10px; padding: 16px;
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px; transition: all 0.2s;
+    }
+    .selection-box.active {
+      background: #e8eef7; border-color: var(--bleu2); border-style: solid;
+    }
+    .selection-box i {
+      font-size: 1.4rem; color: var(--gris);
+    }
+    .selection-box.active i { color: var(--bleu); }
+    .selection-box-text strong {
+      display: block; font-size: 0.88rem; font-weight: 700; color: var(--bleu);
+    }
+    .selection-box-text span {
+      font-size: 0.78rem; color: var(--gris);
+    }
+    .selection-box select {
+      display: none;
+    }
+
+    .checkbox-group {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 20px;
+    }
+    .checkbox-group input { width: auto; }
+    .checkbox-group label {
+      font-size: 0.85rem; color: var(--gris); cursor: pointer; margin: 0;
+    }
+
+    .btn-submit {
+      width: 100%; background: var(--bleu); color: var(--blanc);
+      border: none; border-radius: 10px; padding: 14px;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-submit:hover { background: var(--bleu2); transform: translateY(-1px); }
+
+    .feedback {
+      margin-top: 14px; padding: 12px 16px;
+      border-radius: 8px; font-size: 0.85rem; font-weight: 500;
+      display: none;
+    }
+    .feedback.success {
+      background: #dcfce7; color: #166534; display: block;
+    }
+    .feedback.error {
+      background: #fee2e2; color: #991b1b; display: block;
+    }
+
+    /* Sidebar info */
+    .info-sidebar { position: sticky; top: 80px; }
+    .info-card {
+      background: var(--bleu); color: var(--blanc);
+      border-radius: 16px; padding: 28px; margin-bottom: 16px;
+    }
+    .info-card h4 {
+      font-size: 1rem; font-weight: 700; margin-bottom: 16px;
+      color: var(--or-clair);
+    }
+    .info-steps { list-style: none; }
+    .info-steps li {
+      display: flex; align-items: flex-start; gap: 12px;
+      margin-bottom: 14px; font-size: 0.85rem;
+      color: rgba(255,255,255,0.85);
+    }
+    .step-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--or); color: var(--bleu);
+      font-weight: 800; font-size: 0.72rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .contact-card {
+      background: var(--gris-bg); border: 1px solid var(--bord);
+      border-radius: 16px; padding: 24px;
+    }
+    .contact-card h4 {
+      font-size: 0.9rem; font-weight: 700; color: var(--bleu);
+      margin-bottom: 14px;
+    }
+    .contact-item {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.85rem; color: var(--gris); margin-bottom: 10px;
+    }
+    .contact-item i { color: var(--bleu); font-size: 1rem; width: 16px; }
+    .contact-item a { color: var(--bleu2); text-decoration: none; font-weight: 500; }
+
+    /* ── FAQ ─────────────────────────────────────────────────────── */
+    .faq-list { max-width: 760px; margin: 0 auto; }
+    .faq-item {
+      border: 1px solid var(--bord); border-radius: 10px;
+      margin-bottom: 10px; overflow: hidden;
+    }
+    .faq-item summary {
+      padding: 16px 20px; font-weight: 600; font-size: 0.9rem;
+      color: var(--bleu); cursor: pointer; list-style: none;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: background 0.15s;
+    }
+    .faq-item summary:hover { background: var(--gris-bg); }
+    .faq-item summary::after {
+      content: '\F282'; font-family: 'bootstrap-icons';
+      font-size: 0.9rem; color: var(--gris); transition: transform 0.2s;
+    }
+    .faq-item[open] summary::after { transform: rotate(180deg); }
+    .faq-item p {
+      padding: 0 20px 16px; font-size: 0.85rem; color: var(--gris);
+      line-height: 1.7; border-top: 1px solid var(--bord);
+      padding-top: 14px;
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────────────── */
+    .footer {
+      background: var(--bleu); color: rgba(255,255,255,0.7);
+      padding: 48px 40px 24px;
+    }
+    .footer-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px; margin-bottom: 40px;
+    }
+    .footer-brand .logo {
+      font-size: 1.3rem; font-weight: 800; color: var(--blanc);
+      letter-spacing: 2px; margin-bottom: 10px;
+    }
+    .footer-brand p {
+      font-size: 0.83rem; line-height: 1.6; max-width: 280px;
+    }
+    .footer-col h5 {
+      font-size: 0.78rem; font-weight: 700; color: var(--blanc);
+      text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px;
+    }
+    .footer-col a {
+      display: block; color: rgba(255,255,255,0.6);
+      text-decoration: none; font-size: 0.83rem; margin-bottom: 8px;
+      transition: color 0.2s;
+    }
+    .footer-col a:hover { color: var(--or-clair); }
+    .footer-socials {
+      display: flex; gap: 10px; margin-top: 16px;
+    }
+    .footer-social {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(255,255,255,0.1); color: var(--blanc);
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; font-size: 1rem; transition: background 0.2s;
+    }
+    .footer-social:hover { background: var(--or); color: var(--bleu); }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 20px; display: flex;
+      justify-content: space-between; align-items: center;
+      font-size: 0.78rem;
+    }
+
+    /* ── MODAL ───────────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: var(--blanc); border-radius: 16px; padding: 32px;
+      width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto;
+      margin: 16px; position: relative;
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px;
+      background: var(--gris-bg); border: none; border-radius: 50%;
+      width: 32px; height: 32px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; color: var(--gris);
+    }
+    .modal-close:hover { background: var(--bord); }
+
+    /* ── TOAST ───────────────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      background: #16a34a; color: #fff; padding: 14px 20px;
+      border-radius: 10px; font-size: 0.88rem; font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      display: flex; align-items: center; gap: 10px;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; padding: 48px 20px; }
+      .hero h1 { font-size: 1.7rem; }
+      .section { padding: 48px 20px; }
+      .form-wrapper { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
+      .process-grid { grid-template-columns: 1fr 1fr; }
+      .header { padding: 0 20px; }
+      .header-nav a:not(.btn-header) { display: none; }
+    }
+  </style>
 </head>
-<body class="public-page">
-  <header class="public-header">
-    <div class="public-brand">
-      <div class="logo">SUDICONE</div>
-      <div class="tagline">Solutions CRM & facturation pour PME</div>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-logo">
+        SUDICONE
+        <span>Communication & Digital</span>
+      </div>
     </div>
-    <nav class="public-nav">
-      <a href="/services-public.html" class="active">Forfaits</a>
+    <nav class="header-nav">
+      <a href="#services">Services</a>
       <a href="#packs">Packs</a>
       <a href="#souscrire">Souscrire</a>
       <a href="#faq">FAQ</a>
-      <a href="/login.html" class="btn btn-secondary">Espace client</a>
+      <a href="/aide.html">Aide</a>
+      <a href="/login.html" class="btn-header">Espace client</a>
     </nav>
   </header>
 
-  <main>
-    <section class="hero-section gradient-hero">
-      <div class="hero-copy">
-        <p class="eyebrow">Public — Sans connexion</p>
-        <h1>Choisissez votre forfait SUDICONE et souscrivez en ligne</h1>
-        <p>Découvrez nos services et packs sur une page fluide, construite pour les prospects qui veulent s’inscrire, comparer et envoyer leur demande en un clic.</p>
-        <div class="hero-actions">
-          <a href="#services" class="btn btn-primary">Voir les services</a>
-          <a href="#souscrire" class="btn btn-secondary">Souscrire maintenant</a>
-        </div>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="hero-eyebrow">Communication & Digital — Burkina Faso</span>
+      <h1>Donnez à votre marque la <em>visibilité</em> qu'elle mérite</h1>
+      <p class="hero-desc">
+        Stratégie de communication, production vidéo, site web vitrine, événementiel —
+        SUDICONE accompagne les PME burkinabè dans leur développement digital.
+      </p>
+      <div class="hero-actions">
+        <a href="#souscrire" class="btn-primary">
+          <i class="bi bi-send-fill"></i> Déposer ma demande
+        </a>
+        <a href="#services" class="btn-outline">
+          <i class="bi bi-grid-3x3-gap"></i> Voir nos services
+        </a>
       </div>
-      <div class="hero-image">
-        <div class="hero-card">
-          <div class="hero-card-title">Forfaits clé en main</div>
-          <div class="hero-card-text">Facturation, pipeline, suivi client, workflows, tout est prêt pour digitaliser votre PME.</div>
-          <div class="hero-card-list">
-            <span><i class="bi bi-check2-circle"></i> Packs adaptés</span>
-            <span><i class="bi bi-check2-circle"></i> Souscription en ligne</span>
-            <span><i class="bi bi-check2-circle"></i> Pilotage immédiat</span>
+    </div>
+    <div>
+      <div class="hero-card">
+        <div class="hero-card-title">Pourquoi choisir SUDICONE ?</div>
+        <div class="hero-card-desc">
+          Une équipe locale qui comprend votre marché, vos enjeux et vos clients.
+        </div>
+        <div class="hero-checks">
+          <div class="hero-check">
+            <i class="bi bi-check2-circle"></i> Expertise communication locale
+          </div>
+          <div class="hero-check">
+            <i class="bi bi-check2-circle"></i> Packs tout-en-un adaptés PME
+          </div>
+          <div class="hero-check">
+            <i class="bi bi-check2-circle"></i> Réponse sous 24h garantie
+          </div>
+          <div class="hero-check">
+            <i class="bi bi-check2-circle"></i> Accompagnement personnalisé
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <span class="chiffre">4</span>
+            <span class="libelle">Services clés</span>
+          </div>
+          <div class="hero-stat">
+            <span class="chiffre">24h</span>
+            <span class="libelle">Délai de réponse</span>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="services" class="section-block">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Nos forfaits</p>
-          <h2>Services indépendants</h2>
-          <p>Choisissez un service à la carte pour répondre exactement à vos besoins métier.</p>
-        </div>
+  <!-- PROCESS -->
+  <section class="section" style="padding-top:56px; padding-bottom:56px; background:#f0f4fa;">
+    <div class="process-grid">
+      <div class="process-step">
+        <div class="process-num">1</div>
+        <h4>Choisissez</h4>
+        <p>Sélectionnez le service ou le pack qui correspond à vos besoins.</p>
       </div>
-      <div class="carousel-wrapper">
-        <button class="carousel-nav left" type="button" onclick="scrollCarousel('services-carousel', -1)"><i class="bi bi-chevron-left"></i></button>
-        <div id="services-carousel" class="carousel-scroll"></div>
-        <button class="carousel-nav right" type="button" onclick="scrollCarousel('services-carousel', 1)"><i class="bi bi-chevron-right"></i></button>
+      <div class="process-step">
+        <div class="process-num">2</div>
+        <h4>Remplissez</h4>
+        <p>Complétez le formulaire avec vos coordonnées et votre besoin.</p>
       </div>
-    </section>
+      <div class="process-step">
+        <div class="process-num">3</div>
+        <h4>Envoyez</h4>
+        <p>Votre demande est enregistrée et transmise à notre équipe.</p>
+      </div>
+      <div class="process-step">
+        <div class="process-num">4</div>
+        <h4>On vous rappelle</h4>
+        <p>Un conseiller SUDICONE vous contacte dans les 24 heures.</p>
+      </div>
+    </div>
+  </section>
 
-    <section id="packs" class="section-block section-alt">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Nos packs</p>
-          <h2>Sélectionnez un pack complet</h2>
-          <p>Nos packs combinent plusieurs services pour un accompagnement complet et une mise en place rapide.</p>
-        </div>
+  <!-- SERVICES -->
+  <section id="services" class="section">
+    <div class="section-head">
+      <p class="eyebrow">Nos services</p>
+      <h2>Des solutions à la carte</h2>
+      <p>Choisissez exactement ce dont vous avez besoin. Cliquez sur "Choisir" pour pré-remplir le formulaire automatiquement.</p>
+    </div>
+    <div class="cards-grid" id="services-grid">
+      <div style="text-align:center; color:#9ca3af; padding:40px; grid-column:1/-1;">
+        Chargement des services...
       </div>
-      <div class="carousel-wrapper">
-        <button class="carousel-nav left" type="button" onclick="scrollCarousel('packs-carousel', -1)"><i class="bi bi-chevron-left"></i></button>
-        <div id="packs-carousel" class="carousel-scroll"></div>
-        <button class="carousel-nav right" type="button" onclick="scrollCarousel('packs-carousel', 1)"><i class="bi bi-chevron-right"></i></button>
-      </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="section-block service-highlights">
-      <div class="cards-grid">
-        <article class="feature-card">
-          <div class="icon-circle"><i class="bi bi-speedometer2"></i></div>
-          <h3>Interface rapide</h3>
-          <p>Une page publique qui permet à vos prospects de choisir un service et de s’inscrire sans friction.</p>
-        </article>
-        <article class="feature-card">
-          <div class="icon-circle"><i class="bi bi-file-earmark-text"></i></div>
-          <h3>Saisie complète</h3>
-          <p>Formulaire prospect, détails entreprise, budget, service choisi et demande envoyée en une étape.</p>
-        </article>
-        <article class="feature-card">
-          <div class="icon-circle"><i class="bi bi-graph-up-arrow"></i></div>
-          <h3>Prospects qualifiés</h3>
-          <p>Les informations sont enregistrées dans le CRM afin de relancer immédiatement le lead dans le pipeline.</p>
-        </article>
+  <!-- PACKS -->
+  <section id="packs" class="section section-alt">
+    <div class="section-head">
+      <p class="eyebrow">Nos packs</p>
+      <h2>Tout-en-un, clé en main</h2>
+      <p>Nos packs combinent plusieurs services pour un accompagnement complet à un tarif avantageux.</p>
+    </div>
+    <div class="cards-grid" id="packs-grid">
+      <div style="text-align:center; color:#9ca3af; padding:40px; grid-column:1/-1;">
+        Chargement des packs...
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="souscrire" class="section-block subscribe-section">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Souscription</p>
-          <h2>Remplissez votre demande</h2>
-          <p>Choisissez un service ou un pack, puis envoyez votre demande en quelques secondes.</p>
-        </div>
-      </div>
-      <div class="subscribe-layout">
-        <div class="subscribe-form-card">
-          <div class="form-note">Tous les champs marqués d’un astérisque sont obligatoires.</div>
-          <form id="subscribe-form">
-            <div class="form-row-2">
-              <div class="form-group">
-                <label>Nom complet *</label>
-                <input type="text" name="nom" id="nom" required>
-              </div>
-              <div class="form-group">
-                <label>Entreprise</label>
-                <input type="text" name="entreprise" id="entreprise">
-              </div>
-            </div>
-            <div class="form-row-2">
-              <div class="form-group">
-                <label>Email *</label>
-                <input type="email" name="email" id="email" required>
-              </div>
-              <div class="form-group">
-                <label>Téléphone *</label>
-                <input type="tel" name="telephone" id="telephone" required>
-              </div>
-            </div>
-            <div class="form-row-2">
-              <div class="form-group">
-                <label>Pays</label>
-                <input type="text" name="pays" id="pays" value="Burkina Faso">
-              </div>
-              <div class="form-group">
-                <label>Site web / URL</label>
-                <input type="url" name="site_web" id="site_web" placeholder="https://">
-              </div>
+  <!-- FORMULAIRE -->
+  <section id="souscrire" class="section">
+    <div class="section-head">
+      <p class="eyebrow">Souscription</p>
+      <h2>Déposez votre demande</h2>
+      <p>Remplissez ce formulaire et un conseiller vous recontacte sous 24h.</p>
+    </div>
+
+    <div class="form-wrapper">
+      <div class="form-card">
+        <h3>Votre demande</h3>
+        <p class="form-subtitle">Les champs marqués d'un <span style="color:#ef4444;">*</span> sont obligatoires.</p>
+
+        <form id="subscribe-form">
+
+          <p class="form-section-title">Vos coordonnées</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nom complet <span class="required">*</span></label>
+              <input type="text" id="nom" name="nom" placeholder="Ex : Amadou Traoré" required>
             </div>
             <div class="form-group">
-              <label>Service sélectionné</label>
-              <select id="selected-service" name="service_id">
-                <option value="">Aucun service sélectionné</option>
-              </select>
+              <label>Entreprise</label>
+              <input type="text" id="entreprise" name="entreprise" placeholder="Nom de votre société">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email <span class="required">*</span></label>
+              <input type="email" id="email" name="email" placeholder="votre@email.com" required>
             </div>
             <div class="form-group">
-              <label>Pack sélectionné</label>
-              <select id="selected-pack" name="pack_id">
-                <option value="">Aucun pack sélectionné</option>
-              </select>
+              <label>Téléphone <span class="required">*</span></label>
+              <input type="tel" id="telephone" name="telephone" placeholder="Ex : 70 00 00 00" required>
             </div>
-            <div class="form-row-2">
-              <div class="form-group">
-                <label>Date de début</label>
-                <input type="date" name="date_debut" id="date_debut">
-              </div>
-              <div class="form-group">
-                <label>Date de fin</label>
-                <input type="date" name="date_fin" id="date_fin">
-              </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Pays</label>
+              <input type="text" id="pays" name="pays" value="Burkina Faso">
             </div>
             <div class="form-group">
-              <label>Tarif HT estimé</label>
-              <input type="number" step="0.01" name="tarif_ht" id="tarif_ht" placeholder="Ex: 150000">
+              <label>Site web</label>
+              <input type="url" id="site_web" name="site_web" placeholder="https://monsite.com">
+            </div>
+          </div>
+
+          <p class="form-section-title">Votre sélection</p>
+
+          <!-- Sélection visuelle service -->
+          <div class="selection-box" id="service-box">
+            <i class="bi bi-hdd-network"></i>
+            <div class="selection-box-text">
+              <strong id="service-label">Aucun service sélectionné</strong>
+              <span>Choisissez un service ci-dessus ou sélectionnez dans la liste</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Ou choisissez dans la liste</label>
+            <select id="selected-service" name="service_id">
+              <option value="">— Service —</option>
+            </select>
+          </div>
+
+          <div class="selection-box" id="pack-box">
+            <i class="bi bi-box-seam"></i>
+            <div class="selection-box-text">
+              <strong id="pack-label">Aucun pack sélectionné</strong>
+              <span>Choisissez un pack ci-dessus ou sélectionnez dans la liste</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Ou choisissez un pack</label>
+            <select id="selected-pack" name="pack_id">
+              <option value="">— Pack —</option>
+            </select>
+          </div>
+
+          <p class="form-section-title">Détails du projet</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date de début souhaitée</label>
+              <input type="date" id="date_debut" name="date_debut">
             </div>
             <div class="form-group">
-              <label>Message / Besoin</label>
-              <textarea name="message" id="message" rows="5" placeholder="Décrivez votre projet ou votre besoin"></textarea>
+              <label>Date de fin souhaitée</label>
+              <input type="date" id="date_fin" name="date_fin">
             </div>
-            <div class="form-row-2 align-center">
-              <label class="checkbox-inline"><input type="checkbox" id="renewal" name="renewal"> Renouvellement automatique</label>
-              <button type="submit" class="btn btn-primary">Envoyer ma demande</button>
-            </div>
-            <div id="subscribe-feedback" class="feedback-message"></div>
-          </form>
-        </div>
-        <div class="subscribe-info-card">
-          <h3>Vos prochaines étapes</h3>
-          <ul>
-            <li>1. Choisissez un service ou pack.</li>
-            <li>2. Complétez vos coordonnées.</li>
-            <li>3. Envoyez votre demande.</li>
-            <li>4. Un conseiller SUDICONE vous contacte sous 24h.</li>
+          </div>
+          <div class="form-group">
+            <label>Budget estimé (XOF)</label>
+            <input type="number" id="tarif_ht" name="tarif_ht" placeholder="Ex : 150 000">
+          </div>
+          <div class="form-group">
+            <label>Décrivez votre besoin <span class="required">*</span></label>
+            <textarea id="message" name="message" placeholder="Parlez-nous de votre projet, vos objectifs, votre cible..."></textarea>
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="renewal" name="renewal">
+            <label for="renewal">Je souhaite un renouvellement automatique du service</label>
+          </div>
+
+          <button type="submit" class="btn-submit">
+            <i class="bi bi-send-fill"></i> Envoyer ma demande
+          </button>
+
+          <div class="feedback" id="subscribe-feedback"></div>
+        </form>
+      </div>
+
+      <div class="info-sidebar">
+        <div class="info-card">
+          <h4><i class="bi bi-list-check"></i> Vos prochaines étapes</h4>
+          <ul class="info-steps">
+            <li>
+              <span class="step-num">1</span>
+              Choisissez un service ou un pack dans notre catalogue.
+            </li>
+            <li>
+              <span class="step-num">2</span>
+              Complétez vos coordonnées et décrivez votre besoin.
+            </li>
+            <li>
+              <span class="step-num">3</span>
+              Envoyez votre demande — c'est gratuit et sans engagement.
+            </li>
+            <li>
+              <span class="step-num">4</span>
+              Un conseiller SUDICONE vous contacte sous 24h pour discuter de votre projet.
+            </li>
           </ul>
-          <div class="highlight-box">
-            <strong>Besoin d’aide ?</strong>
-            <p>Vous pouvez aussi ouvrir un ticket de démonstration ou demander une présentation personnalisée.</p>
+        </div>
+
+        <div class="contact-card">
+          <h4>Besoin d'aide ?</h4>
+          <div class="contact-item">
+            <i class="bi bi-telephone-fill"></i>
+            <a href="tel:+22620202020">20 20 20 20</a>
+          </div>
+          <div class="contact-item">
+            <i class="bi bi-envelope-fill"></i>
+            <a href="mailto:sudicone@gmail.com">sudicone@gmail.com</a>
+          </div>
+          <div class="contact-item">
+            <i class="bi bi-geo-alt-fill"></i>
+            <span>Trame d'accueil, 2ème étage, Immeuble Le Privilège</span>
+          </div>
+          <div class="contact-item">
+            <i class="bi bi-clock-fill"></i>
+            <span>Lun – Ven, 8h – 17h</span>
+          </div>
+          <div style="margin-top:16px;">
+            <a href="/aide.html" style="
+              display:inline-flex; align-items:center; gap:6px;
+              font-size:0.83rem; color:#1b3a6b; font-weight:600;
+              text-decoration:none;
+            ">
+              <i class="bi bi-question-circle"></i> Voir la page d'aide
+            </a>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section id="faq" class="section-block section-alt faq-section">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Questions fréquentes</p>
-          <h2>Tout ce qu’il faut savoir</h2>
-          <p>Une page simple, complète et adaptée au visiteur qui souhaite souscrire sans blocage.</p>
+  <!-- FAQ -->
+  <section id="faq" class="section section-alt">
+    <div class="section-head">
+      <p class="eyebrow">Questions fréquentes</p>
+      <h2>Tout ce qu'il faut savoir</h2>
+      <p>Des réponses claires pour vous aider à faire le bon choix.</p>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>Comment fonctionne la souscription ?</summary>
+        <p>Choisissez un service ou un pack, remplissez le formulaire avec vos coordonnées et votre besoin, puis envoyez votre demande. Un conseiller SUDICONE vous recontacte dans les 24 heures pour valider votre projet et vous proposer un devis détaillé.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Est-ce gratuit de soumettre une demande ?</summary>
+        <p>Oui, totalement gratuit et sans engagement. Vous ne payez qu'après avoir validé votre devis avec notre équipe.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Puis-je combiner plusieurs services ?</summary>
+        <p>Absolument. Nos packs sont justement conçus pour combiner plusieurs services à un tarif avantageux. Si vous avez des besoins spécifiques, précisez-les dans le champ "Décrivez votre besoin" et nous vous proposerons une offre sur-mesure.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Dans quel délai serai-je contacté ?</summary>
+        <p>Nous nous engageons à vous répondre dans les 24 heures ouvrables suivant la réception de votre demande.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Qu'est-ce que le renouvellement automatique ?</summary>
+        <p>En cochant cette option, votre service sera reconduit automatiquement à échéance selon les mêmes conditions. Vous pouvez désactiver cette option à tout moment en contactant notre équipe.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Travaillez-vous avec des entreprises de toutes tailles ?</summary>
+        <p>Oui. Nos services s'adressent aux TPE, PME, startups et associations. Chaque offre est adaptable à votre structure et à votre budget.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">SUDICONE</div>
+        <p>Agence de communication burkinabè spécialisée dans la stratégie digitale, la production vidéo, les sites web et l'événementiel.</p>
+        <div class="footer-socials">
+          <a href="#" class="footer-social" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+          <a href="#" class="footer-social" title="Facebook"><i class="bi bi-facebook"></i></a>
+          <a href="#" class="footer-social" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
         </div>
       </div>
-      <div class="faq-grid">
-        <details>
-          <summary>Comment ma demande est-elle enregistrée ?</summary>
-          <p>Le formulaire crée un lead prospect dans le CRM et rattache le service ou le pack choisi. L’équipe commerciale retrouve les données immédiatement.</p>
-        </details>
-        <details>
-          <summary>Puis-je choisir plusieurs services ?</summary>
-          <p>Sur cette page, vous pouvez sélectionner un service ou un pack principal. Pour une offre sur-mesure, précisez vos attentes dans le message.</p>
-        </details>
-        <details>
-          <summary>Est-ce gratuit de soumettre ma demande ?</summary>
-          <p>Oui, le formulaire est gratuit. Nous utilisons vos informations uniquement pour répondre à votre besoin.</p>
-        </details>
-        <details>
-          <summary>Dois-je être client pour accéder aux forfaits ?</summary>
-          <p>Non, cette page est publique : clients, prospects, partenaires peuvent consulter et souscrire.</p>
-        </details>
+      <div class="footer-col">
+        <h5>Services</h5>
+        <a href="#services">Stratégie de communication</a>
+        <a href="#services">Production vidéo</a>
+        <a href="#services">Site web vitrine</a>
+        <a href="#services">Événementiel</a>
       </div>
-    </section>
-  </main>
+      <div class="footer-col">
+        <h5>Liens utiles</h5>
+        <a href="#packs">Nos packs</a>
+        <a href="#souscrire">Souscrire</a>
+        <a href="/aide.html">Centre d'aide</a>
+        <a href="/login.html">Espace client</a>
+      </div>
+      <div class="footer-col">
+        <h5>Contact</h5>
+        <a href="tel:+22620202020">20 20 20 20</a>
+        <a href="mailto:sudicone@gmail.com">sudicone@gmail.com</a>
+        <a href="#">Trame d'accueil, 2ème étage<br>Immeuble Le Privilège</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 SUDICONE. Tous droits réservés.</span>
+      <a href="/aide.html" style="color:rgba(255,255,255,0.5); text-decoration:none;">
+        <i class="bi bi-question-circle"></i> Centre d'aide
+      </a>
+    </div>
+  </footer>
 
+  <!-- MODAL DÉTAIL -->
   <div id="detail-modal" class="modal-overlay">
-    <div class="modal modal-large">
-      <button class="modal-close" type="button" onclick="closeDetailModal()"><i class="bi bi-x"></i></button>
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeDetailModal()">
+        <i class="bi bi-x"></i>
+      </button>
       <div id="detail-modal-content"></div>
     </div>
   </div>

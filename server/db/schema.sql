@@ -194,6 +194,21 @@ CREATE TABLE IF NOT EXISTS activites (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Notifications internes (alertes leads, assignations, etc.)
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  titre TEXT NOT NULL,
+  message TEXT,
+  contact_id INTEGER REFERENCES contacts(id) ON DELETE CASCADE,
+  opportunite_id INTEGER REFERENCES opportunites(id) ON DELETE CASCADE,
+  tache_id INTEGER REFERENCES taches(id) ON DELETE CASCADE,
+  destinataire_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  lu INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+
 -- Index utiles pour les perfs
 CREATE INDEX IF NOT EXISTS idx_contacts_owner ON contacts(owner_id);
 CREATE INDEX IF NOT EXISTS idx_opportunites_contact ON opportunites(contact_id);
@@ -201,3 +216,5 @@ CREATE INDEX IF NOT EXISTS idx_opportunites_etape ON opportunites(etape);
 CREATE INDEX IF NOT EXISTS idx_factures_contact ON factures(contact_id);
 CREATE INDEX IF NOT EXISTS idx_taches_statut ON taches(statut);
 CREATE INDEX IF NOT EXISTS idx_activites_contact ON activites(contact_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_destinataire ON notifications(destinataire_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_lu ON notifications(lu);

@@ -150,4 +150,98 @@ router.get('/performance-commerciaux', (req, res) => {
   res.json(data);
 });
 
+// GET /api/stats/entonnoir-conversion - entonnoir pipeline
+router.get('/entonnoir-conversion', (req, res) => {
+  const etapes = ['nouveau', 'qualification', 'proposition', 'negociation', 'gagne'];
+  const data = etapes.map(etape => {
+    const row = db.prepare(`
+      SELECT COUNT(*) as count, COALESCE(SUM(montant),0) as montant
+      FROM opportunites WHERE etape = ?
+    `).get(etape);
+    return { etape, count: row.count, montant: row.montant };
+  });
+  res.json(data);
+});
+
+// GET /api/stats/ca-par-commercial - CA par commercial
+router.get('/ca-par-commercial', (req, res) => {
+  const data = db.prepare(`
+    SELECT u.nom, 
+      COUNT(o.id) as nb_opps,
+      COALESCE(SUM(CASE WHEN o.etape = 'gagne' THEN o.montant ELSE 0 END), 0) as ca_gagne,
+      COALESCE(SUM(CASE WHEN o.etape NOT IN ('gagne','perdu') THEN o.montant ELSE 0 END), 0) as ca_pipeline,
+      COUNT(CASE WHEN o.etape = 'gagne' THEN 1 END) as nb_gagnes,
+      COUNT(CASE WHEN o.etape = 'perdu' THEN 1 END) as nb_perdus
+    FROM users u
+    LEFT JOIN opportunites o ON o.owner_id = u.id
+    WHERE u.actif = 1
+    GROUP BY u.id, u.nom
+    ORDER BY ca_gagne DESC
+  `).all();
+  res.json(data);
+});
+
+// GET /api/stats/heatmap-activite - activité par mois/jour
+router.get('/heatmap-activite', (req, res) => {
+  const data = db.prepare(`
+    SELECT strftime('%Y-%m', created_at) as mois,
+           COUNT(*) as count
+    FROM activites
+    WHERE created_at >= date('now', '-12 months')
+    GROUP BY mois
+    ORDER BY mois ASC
+  `).all();
+  res.json(data);
+});
+
+// GET /api/stats/taux-conversion-mensuel - taux de conversion par mois
+router.get('/taux-conversion-mensuel', (req, res) => {
+  const data = db.prepare(`
+    SELECT strftime('%Y-%m', created_at) as mois,
+      COUNT(*) as total,
+      COUNT(CASE WHEN etape = 'gagne' THEN 1 END) as gagnes
+    FROM opportunites
+    WHERE created_at >= date('now', '-12 months')
+    GROUP BY mois
+    ORDER BY mois ASC
+  `).all();
+  res.json(data.map(d => ({
+    mois: d.mois,
+    taux: d.total > 0 ? Math.round((d.gagnes / d.total) * 100) : 0,
+    total: d.total,
+    gagnes: d.gagnes
+  })));
+});
+
+// GET /api/stats/top-services - top services par revenus
+router.get('/top-services', (req, res) => {
+  const data = db.prepare(`
+    SELECT s.titre, s.categorie,
+      COUNT(cs.id) as nb_ventes,
+      COALESCE(SUM(cs.tarif_ht), 0) as revenus
+    FROM services s
+    LEFT JOIN contact_services cs ON cs.service_id = s.id
+    GROUP BY s.id, s.titre, s.categorie
+    ORDER BY revenus DESC
+    LIMIT 8
+  `).all();
+  res.json(data);
+});
+
+// GET /api/stats/delai-paiement - délai moyen de paiement
+router.get('/delai-paiement', (req, res) => {
+  const data = db.prepare(`
+    SELECT 
+      AVG(CASE WHEN statut = 'paye' 
+          THEN julianday(date_emission) - julianday(date_echeance)
+          END) as delai_moyen,
+      COUNT(CASE WHEN statut = 'paye' THEN 1 END) as nb_payees,
+      COUNT(CASE WHEN statut = 'en_retard' THEN 1 END) as nb_retard,
+      COALESCE(SUM(CASE WHEN statut = 'en_retard' THEN montant_ttc END), 0) as montant_retard
+    FROM factures
+    WHERE type = 'facture'
+  `).get();
+  res.json(data);
+});
+
 module.exports = router;

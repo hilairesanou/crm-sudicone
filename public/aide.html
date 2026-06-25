@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centre d'aide — SUDICONE</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bleu:    #0b2545;
+      --bleu2:   #1b3a6b;
+      --or:      #c9a84c;
+      --or-clair:#f0d98a;
+      --blanc:   #ffffff;
+      --gris-bg: #f7f8fa;
+      --gris:    #6b7280;
+      --bord:    #e5e7eb;
+      --texte:   #1a1a2e;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: var(--texte); background: var(--blanc); line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bleu);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 64px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    .header-logo {
+      font-size: 1.4rem; font-weight: 800; color: var(--blanc);
+      letter-spacing: 2px; text-decoration: none;
+    }
+    .header-logo span {
+      display: block; font-size: 0.65rem; font-weight: 400;
+      color: var(--or-clair); letter-spacing: 1px; margin-top: -4px;
+    }
+    .header-nav {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .header-nav a {
+      color: rgba(255,255,255,0.75); text-decoration: none;
+      font-size: 0.88rem; padding: 6px 14px; border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .header-nav a:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .btn-header {
+      background: var(--or); color: var(--bleu) !important;
+      font-weight: 700 !important; border-radius: 6px !important;
+    }
+    .btn-header:hover { background: var(--or-clair) !important; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--bleu) 0%, var(--bleu2) 100%);
+      padding: 64px 40px; text-align: center;
+    }
+    .hero-eyebrow {
+      display: inline-block;
+      background: rgba(201,168,76,0.2); color: var(--or-clair);
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; padding: 4px 14px; border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: 2.2rem; font-weight: 800; color: var(--blanc);
+      margin-bottom: 12px; line-height: 1.2;
+    }
+    .hero p {
+      color: rgba(255,255,255,0.7); font-size: 1rem;
+      max-width: 520px; margin: 0 auto 28px;
+    }
+    .hero-links {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    }
+    .hero-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.1); color: var(--blanc);
+      padding: 10px 20px; border-radius: 8px; text-decoration: none;
+      font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.2);
+      transition: all 0.2s;
+    }
+    .hero-link:hover { background: var(--or); color: var(--bleu); border-color: var(--or); }
+
+    /* ── SECTIONS ── */
+    .section { padding: 72px 40px; max-width: 1000px; margin: 0 auto; }
+    .section-alt { background: var(--gris-bg); max-width: none; padding: 72px 40px; }
+    .section-alt .inner { max-width: 1000px; margin: 0 auto; }
+
+    .section-title {
+      font-size: 1.6rem; font-weight: 800; color: var(--bleu);
+      margin-bottom: 8px;
+    }
+    .section-subtitle {
+      color: var(--gris); font-size: 0.92rem; margin-bottom: 40px;
+    }
+    .eyebrow {
+      display: inline-block; color: var(--or);
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    /* ── À PROPOS ── */
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+      align-items: center;
+    }
+    .about-text p {
+      color: var(--gris); font-size: 0.92rem; line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .about-values {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      margin-top: 24px;
+    }
+    .value-card {
+      background: var(--gris-bg); border-radius: 10px; padding: 16px;
+      border-left: 3px solid var(--or);
+    }
+    .value-card h4 {
+      font-size: 0.88rem; font-weight: 700; color: var(--bleu);
+      margin-bottom: 4px;
+    }
+    .value-card p {
+      font-size: 0.78rem; color: var(--gris); margin: 0;
+    }
+    .about-card {
+      background: var(--bleu); border-radius: 16px; padding: 32px;
+      color: var(--blanc);
+    }
+    .about-card h3 {
+      font-size: 1.1rem; font-weight: 700; color: var(--or-clair);
+      margin-bottom: 20px;
+    }
+    .service-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      margin-bottom: 16px; font-size: 0.88rem;
+      color: rgba(255,255,255,0.85);
+    }
+    .service-item i {
+      color: var(--or); font-size: 1.1rem; margin-top: 1px; flex-shrink: 0;
+    }
+    .service-item strong { display: block; color: var(--blanc); margin-bottom: 2px; }
+    .contact-bloc {
+      margin-top: 24px; padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+    }
+    .contact-bloc h4 {
+      font-size: 0.78rem; font-weight: 700; color: var(--or-clair);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;
+    }
+    .contact-ligne {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.83rem; color: rgba(255,255,255,0.75);
+      margin-bottom: 8px;
+    }
+    .contact-ligne i { color: var(--or); width: 16px; }
+    .contact-ligne a { color: var(--or-clair); text-decoration: none; }
+    .social-row {
+      display: flex; gap: 8px; margin-top: 14px;
+    }
+    .social-btn {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: rgba(255,255,255,0.1); color: var(--blanc);
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; font-size: 0.95rem; transition: background 0.2s;
+    }
+    .social-btn:hover { background: var(--or); color: var(--bleu); }
+
+    /* ── EQUIPE ── */
+    .team-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .team-card {
+      background: var(--gris-bg); border-radius: 12px; padding: 24px;
+      text-align: center; border: 1px solid var(--bord);
+      transition: box-shadow 0.2s;
+    }
+    .team-card:hover { box-shadow: 0 4px 16px rgba(11,37,69,0.1); }
+    .team-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--bleu); color: var(--blanc);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; font-weight: 800; margin: 0 auto 12px;
+    }
+    .team-card h4 { font-size: 0.9rem; font-weight: 700; color: var(--bleu); }
+    .team-card span { font-size: 0.78rem; color: var(--gris); }
+
+    /* ── FAQ ── */
+    .faq-categories {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .faq-cat-btn {
+      padding: 6px 16px; border-radius: 999px;
+      border: 1.5px solid var(--bord); background: var(--blanc);
+      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      color: var(--gris); transition: all 0.2s;
+    }
+    .faq-cat-btn.active, .faq-cat-btn:hover {
+      background: var(--bleu); color: var(--blanc); border-color: var(--bleu);
+    }
+    .faq-group { display: none; }
+    .faq-group.active { display: block; }
+    .faq-group-title {
+      font-size: 0.78rem; font-weight: 700; color: var(--or);
+      text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 14px;
+    }
+    .faq-item {
+      border: 1px solid var(--bord); border-radius: 10px;
+      margin-bottom: 10px; overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    .faq-item:hover { box-shadow: 0 2px 8px rgba(11,37,69,0.07); }
+    .faq-item summary {
+      padding: 16px 20px; font-weight: 600; font-size: 0.9rem;
+      color: var(--bleu); cursor: pointer; list-style: none;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .faq-item summary:hover { background: var(--gris-bg); }
+    .faq-item summary::after {
+      content: '\F282'; font-family: 'bootstrap-icons';
+      font-size: 0.9rem; color: var(--gris); transition: transform 0.2s;
+      flex-shrink: 0; margin-left: 12px;
+    }
+    .faq-item[open] summary { background: var(--gris-bg); }
+    .faq-item[open] summary::after { transform: rotate(180deg); }
+    .faq-item p {
+      padding: 14px 20px 16px; font-size: 0.85rem; color: var(--gris);
+      line-height: 1.7; border-top: 1px solid var(--bord);
+    }
+
+    /* ── CONTACT CTA ── */
+    .cta-band {
+      background: linear-gradient(135deg, var(--bleu) 0%, var(--bleu2) 100%);
+      padding: 56px 40px; text-align: center;
+    }
+    .cta-band h2 {
+      font-size: 1.7rem; font-weight: 800; color: var(--blanc);
+      margin-bottom: 10px;
+    }
+    .cta-band p {
+      color: rgba(255,255,255,0.7); margin-bottom: 28px; font-size: 0.95rem;
+    }
+    .cta-buttons {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    }
+    .btn-or {
+      background: var(--or); color: var(--bleu);
+      font-weight: 700; padding: 12px 28px; border-radius: 10px;
+      text-decoration: none; font-size: 0.9rem;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-or:hover { background: var(--or-clair); }
+    .btn-blanc {
+      background: rgba(255,255,255,0.1); color: var(--blanc);
+      font-weight: 600; padding: 12px 28px; border-radius: 10px;
+      text-decoration: none; font-size: 0.9rem; border: 1px solid rgba(255,255,255,0.3);
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-blanc:hover { background: rgba(255,255,255,0.2); }
+
+    /* ── FOOTER ── */
+    .footer {
+      background: var(--bleu); color: rgba(255,255,255,0.6);
+      padding: 32px 40px; display: flex;
+      justify-content: space-between; align-items: center;
+      font-size: 0.82rem; flex-wrap: wrap; gap: 12px;
+    }
+    .footer a {
+      color: rgba(255,255,255,0.5); text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer a:hover { color: var(--or-clair); }
+
+    @media (max-width: 768px) {
+      .hero { padding: 48px 20px; }
+      .hero h1 { font-size: 1.6rem; }
+      .section { padding: 48px 20px; }
+      .about-grid { grid-template-columns: 1fr; }
+      .about-values { grid-template-columns: 1fr; }
+      .header { padding: 0 20px; }
+      .header-nav a:not(.btn-header) { display: none; }
+      .cta-band { padding: 48px 20px; }
+      .footer { flex-direction: column; text-align: center; padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <a href="/services-public.html" class="header-logo">
+      SUDICONE
+      <span>Communication & Digital</span>
+    </a>
+    <nav class="header-nav">
+      <a href="/services-public.html">Accueil</a>
+      <a href="/services-public.html#services">Services</a>
+      <a href="/services-public.html#packs">Packs</a>
+      <a href="/services-public.html#souscrire">Souscrire</a>
+      <a href="/login.html" class="btn-header">Espace client</a>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <span class="hero-eyebrow">Centre d'aide</span>
+    <h1>Bienvenue chez SUDICONE</h1>
+    <p>Tout ce qu'il faut savoir sur nos services, notre fonctionnement et comment nous contacter.</p>
+    <div class="hero-links">
+      <a href="#apropos" class="hero-link"><i class="bi bi-building"></i> Qui sommes-nous</a>
+      <a href="#faq" class="hero-link"><i class="bi bi-question-circle"></i> FAQ</a>
+      <a href="#contact" class="hero-link"><i class="bi bi-telephone"></i> Nous contacter</a>
+    </div>
+  </section>
+
+  <!-- À PROPOS -->
+  <section id="apropos" class="section">
+    <p class="eyebrow">Qui sommes-nous</p>
+    <h2 class="section-title">SUDICONE, votre partenaire communication</h2>
+    <p class="section-subtitle">Une agence burkinabè au service de votre visibilité</p>
+
+    <div class="about-grid">
+      <div class="about-text">
+        <p>
+          SUDICONE est une agence de communication basée à Ouagadougou, au Burkina Faso.
+          Nous accompagnons les TPE, PME, startups et associations dans leur développement
+          digital et leur rayonnement sur le marché local et régional.
+        </p>
+        <p>
+          Notre équipe combine expertise locale et maîtrise des outils modernes pour
+          vous offrir des solutions concrètes, adaptées à votre budget et à vos objectifs.
+          Que vous ayez besoin d'une stratégie de communication, d'un site web, d'une
+          vidéo professionnelle ou d'un accompagnement événementiel, nous sommes là.
+        </p>
+        <p>
+          Nous croyons que chaque entreprise burkinabè mérite une communication
+          professionnelle — quelle que soit sa taille.
+        </p>
+
+        <div class="about-values">
+          <div class="value-card">
+            <h4><i class="bi bi-patch-check"></i> Qualité</h4>
+            <p>Des livrables soignés, à la hauteur de vos ambitions.</p>
+          </div>
+          <div class="value-card">
+            <h4><i class="bi bi-lightning"></i> Réactivité</h4>
+            <p>Réponse sous 24h, suivi régulier de vos projets.</p>
+          </div>
+          <div class="value-card">
+            <h4><i class="bi bi-people"></i> Proximité</h4>
+            <p>Une équipe locale qui comprend votre marché.</p>
+          </div>
+          <div class="value-card">
+            <h4><i class="bi bi-shield-check"></i> Confiance</h4>
+            <p>Transparence sur les tarifs et les délais.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-card">
+        <h3><i class="bi bi-grid-3x3-gap"></i> Nos domaines d'expertise</h3>
+
+        <div class="service-item">
+          <i class="bi bi-megaphone-fill"></i>
+          <div>
+            <strong>Stratégie de communication</strong>
+            Plan de communication, positionnement, identité de marque.
+          </div>
+        </div>
+        <div class="service-item">
+          <i class="bi bi-camera-video-fill"></i>
+          <div>
+            <strong>Production vidéo</strong>
+            Spots publicitaires, reportages, teasers, vidéos institutionnelles.
+          </div>
+        </div>
+        <div class="service-item">
+          <i class="bi bi-globe"></i>
+          <div>
+            <strong>Site web vitrine</strong>
+            Création de sites modernes, responsive et optimisés SEO.
+          </div>
+        </div>
+        <div class="service-item">
+          <i class="bi bi-calendar-event-fill"></i>
+          <div>
+            <strong>Événementiel</strong>
+            Organisation et couverture d'événements professionnels.
+          </div>
+        </div>
+
+        <div class="contact-bloc">
+          <h4>Nous joindre</h4>
+          <div class="contact-ligne">
+            <i class="bi bi-telephone-fill"></i>
+            <a href="tel:+22620202020">20 20 20 20</a>
+          </div>
+          <div class="contact-ligne">
+            <i class="bi bi-envelope-fill"></i>
+            <a href="mailto:sudicone@gmail.com">sudicone@gmail.com</a>
+          </div>
+          <div class="contact-ligne">
+            <i class="bi bi-geo-alt-fill"></i>
+            Trame d'accueil, 2ème étage, Immeuble Le Privilège, Ouagadougou
+          </div>
+          <div class="contact-ligne">
+            <i class="bi bi-clock-fill"></i>
+            Lundi – Vendredi, 8h – 17h
+          </div>
+          <div class="social-row">
+            <a href="#" class="social-btn" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+            <a href="#" class="social-btn" title="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="social-btn" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <div class="section-alt" id="faq">
+    <div class="inner">
+      <p class="eyebrow">Questions fréquentes</p>
+      <h2 class="section-title">Tout ce qu'il faut savoir</h2>
+      <p class="section-subtitle">Retrouvez les réponses aux questions les plus courantes, organisées par thème.</p>
+
+      <!-- Filtres catégories -->
+      <div class="faq-categories">
+        <button class="faq-cat-btn active" onclick="showFaqCat('tous')">Toutes</button>
+        <button class="faq-cat-btn" onclick="showFaqCat('services')">Nos services</button>
+        <button class="faq-cat-btn" onclick="showFaqCat('souscription')">Souscription</button>
+        <button class="faq-cat-btn" onclick="showFaqCat('paiement')">Tarifs & paiement</button>
+        <button class="faq-cat-btn" onclick="showFaqCat('suivi')">Suivi de projet</button>
+      </div>
+
+      <!-- Toutes les questions -->
+      <div class="faq-group active" id="faq-tous">
+
+        <p class="faq-group-title">Nos services</p>
+        <details class="faq-item">
+          <summary>Quels types d'entreprises accompagnez-vous ?</summary>
+          <p>Nous travaillons avec des TPE, PME, startups, associations et institutions de toutes tailles. Nos offres sont modulables pour s'adapter à votre budget et à vos objectifs, que vous soyez en phase de démarrage ou en pleine croissance.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Proposez-vous des services sur-mesure ?</summary>
+          <p>Oui. En plus de nos packs standards, nous élaborons des offres personnalisées selon vos besoins. Décrivez votre projet dans le formulaire de souscription et un conseiller vous contactera pour construire une proposition adaptée.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Intervenez-vous en dehors de Ouagadougou ?</summary>
+          <p>Nous intervenons principalement à Ouagadougou, mais nous pouvons accompagner des projets dans d'autres villes du Burkina Faso et dans la sous-région selon la nature de la mission.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Quelle est la durée moyenne d'un projet ?</summary>
+          <p>Cela dépend du service. Un site web vitrine prend généralement 2 à 4 semaines. Une stratégie de communication se déploie sur 1 à 3 mois. Une production vidéo varie selon le format. Nous vous donnons un calendrier précis dès la validation de votre devis.</p>
+        </details>
+
+        <p class="faq-group-title" style="margin-top:28px;">Souscription</p>
+        <details class="faq-item">
+          <summary>Comment soumettre une demande ?</summary>
+          <p>Rendez-vous sur notre page de souscription, choisissez un service ou un pack, remplissez le formulaire avec vos coordonnées et votre besoin, puis envoyez. Un conseiller vous recontacte sous 24 heures ouvrables.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Est-ce gratuit de soumettre une demande ?</summary>
+          <p>Oui, totalement gratuit et sans engagement. Vous ne payez qu'après avoir validé votre devis avec notre équipe commerciale.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Puis-je modifier ma demande après envoi ?</summary>
+          <p>Oui, contactez-nous par téléphone ou email dès que possible après l'envoi du formulaire. Tant que le devis n'est pas signé, toute modification est possible.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Qu'est-ce que le renouvellement automatique ?</summary>
+          <p>En cochant cette option, votre service est reconduit automatiquement à échéance dans les mêmes conditions. Vous pouvez désactiver cette option à tout moment en contactant notre équipe au moins 15 jours avant l'échéance.</p>
+        </details>
+
+        <p class="faq-group-title" style="margin-top:28px;">Tarifs & paiement</p>
+        <details class="faq-item">
+          <summary>Comment sont calculés vos tarifs ?</summary>
+          <p>Nos tarifs sont affichés hors taxes (HT). La TVA applicable au Burkina Faso sera ajoutée sur votre devis final. Les packs offrent une tarification avantageuse par rapport aux services pris individuellement.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Quels modes de paiement acceptez-vous ?</summary>
+          <p>Nous acceptons les virements bancaires, les paiements mobile money (Orange Money, Moov Money) et les règlements en espèces dans nos locaux. Les modalités sont précisées dans votre devis.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Proposez-vous un paiement en plusieurs fois ?</summary>
+          <p>Oui, pour les projets importants, nous pouvons proposer un échéancier de paiement. Un acompte de 30 à 50% est généralement demandé au démarrage du projet.</p>
+        </details>
+
+        <p class="faq-group-title" style="margin-top:28px;">Suivi de projet</p>
+        <details class="faq-item">
+          <summary>Comment se déroule le suivi de mon projet ?</summary>
+          <p>Un conseiller SUDICONE est dédié à votre projet. Vous bénéficiez de points réguliers par téléphone ou en présentiel, et d'un accès à votre espace client pour suivre l'avancement, les factures et les livrables.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Que faire si je ne suis pas satisfait du résultat ?</summary>
+          <p>Nous incluons des allers-retours de correction dans chaque prestation. Si le livrable ne correspond pas au cahier des charges validé, nous le corrigeons sans frais supplémentaires. Notre objectif est votre satisfaction totale.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Comment accéder à mon espace client ?</summary>
+          <p>Cliquez sur "Espace client" en haut de la page et connectez-vous avec vos identifiants. Si vous n'en avez pas encore, votre conseiller vous les communiquera après la validation de votre devis.</p>
+        </details>
+      </div>
+
+      <!-- Groupes filtrés (cachés par défaut) -->
+      <div class="faq-group" id="faq-services"></div>
+      <div class="faq-group" id="faq-souscription"></div>
+      <div class="faq-group" id="faq-paiement"></div>
+      <div class="faq-group" id="faq-suivi"></div>
+    </div>
+  </div>
+
+  <!-- CTA CONTACT -->
+  <section id="contact" class="cta-band">
+    <h2>Vous n'avez pas trouvé votre réponse ?</h2>
+    <p>Notre équipe est disponible du lundi au vendredi, de 8h à 17h pour répondre à toutes vos questions.</p>
+    <div class="cta-buttons">
+      <a href="tel:+22620202020" class="btn-or">
+        <i class="bi bi-telephone-fill"></i> Appeler le 20 20 20 20
+      </a>
+      <a href="mailto:sudicone@gmail.com" class="btn-blanc">
+        <i class="bi bi-envelope-fill"></i> sudicone@gmail.com
+      </a>
+      <a href="/services-public.html#souscrire" class="btn-blanc">
+        <i class="bi bi-send-fill"></i> Déposer une demande
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <span>© 2026 SUDICONE. Tous droits réservés.</span>
+    <div style="display:flex; gap:20px;">
+      <a href="/services-public.html">Accueil</a>
+      <a href="/services-public.html#services">Services</a>
+      <a href="/services-public.html#packs">Packs</a>
+      <a href="/services-public.html#souscrire">Souscrire</a>
+    </div>
+  </footer>
+
+  <script>
+    // Filtrage FAQ par catégorie
+    const faqData = {
+      services:     [0,1,2,3],
+      souscription: [4,5,6,7],
+      paiement:     [8,9,10],
+      suivi:        [11,12,13]
+    };
+
+    function showFaqCat(cat) {
+      // Mettre à jour les boutons
+      document.querySelectorAll('.faq-cat-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Toujours afficher le groupe "tous"
+      const tousGroup = document.getElementById('faq-tous');
+      const allItems  = tousGroup.querySelectorAll('.faq-item');
+
+      if (cat === 'tous') {
+        tousGroup.classList.add('active');
+        allItems.forEach(item => item.style.display = 'block');
+        tousGroup.querySelectorAll('.faq-group-title').forEach(t => t.style.display = 'block');
+        return;
+      }
+
+      // Cacher les titres et items non concernés
+      const indices = faqData[cat] || [];
+      tousGroup.classList.add('active');
+
+      tousGroup.querySelectorAll('.faq-group-title').forEach(t => t.style.display = 'none');
+      allItems.forEach((item, i) => {
+        item.style.display = indices.includes(i) ? 'block' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

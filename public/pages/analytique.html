@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytique — CRM Sudicone</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <script src="/vendor/chartjs/chart.umd.js"></script>
+  <style>
+    .analytics-header {
+      background: linear-gradient(135deg, var(--bleu) 0%, var(--bleu2) 100%);
+      border-radius: 12px; padding: 24px 28px; margin-bottom: 24px;
+      color: white; display: flex; align-items: center; justify-content: space-between;
+    }
+    .analytics-header h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+    .analytics-header p { color: rgba(255,255,255,0.7); font-size: 0.88rem; }
+
+    .filters-bar {
+      display: flex; gap: 12px; align-items: center;
+      flex-wrap: wrap; margin-bottom: 24px;
+      background: var(--blanc); border: 1px solid var(--bordure);
+      border-radius: 10px; padding: 14px 18px;
+    }
+    .filters-bar label {
+      font-size: 0.8rem; font-weight: 700; color: var(--bleu);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .filters-bar select, .filters-bar input {
+      padding: 7px 12px; border: 1.5px solid var(--bordure);
+      border-radius: 8px; font-size: 0.85rem; background: var(--blanc);
+    }
+    .filters-bar select:focus, .filters-bar input:focus {
+      outline: none; border-color: var(--bleu2);
+    }
+    .btn-appliquer {
+      padding: 8px 18px; background: var(--bleu); color: white;
+      border: none; border-radius: 8px; font-size: 0.85rem;
+      font-weight: 600; cursor: pointer; transition: background 0.15s;
+    }
+    .btn-appliquer:hover { background: var(--bleu2); }
+
+    .kpi-band {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      gap: 14px; margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--blanc); border: 1px solid var(--bordure);
+      border-radius: 12px; padding: 18px 16px;
+      position: relative; overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .kpi-card:hover { box-shadow: var(--ombre-md); transform: translateY(-2px); }
+    .kpi-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .kpi-card.bleu::before  { background: var(--bleu); }
+    .kpi-card.vert::before  { background: #16a34a; }
+    .kpi-card.or::before    { background: var(--or); }
+    .kpi-card.rouge::before { background: #dc2626; }
+    .kpi-card.violet::before{ background: #7c3aed; }
+    .kpi-card .kpi-icon {
+      font-size: 1.4rem; margin-bottom: 8px; display: block;
+    }
+    .kpi-card .kpi-val {
+      font-size: 1.6rem; font-weight: 800; color: var(--bleu);
+      display: block; margin-bottom: 4px; line-height: 1;
+    }
+    .kpi-card .kpi-label {
+      font-size: 0.75rem; font-weight: 600; color: var(--gris);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .kpi-card .kpi-sub {
+      font-size: 0.75rem; color: var(--gris); margin-top: 4px;
+    }
+
+    .section-title {
+      font-size: 0.75rem; font-weight: 800; color: var(--bleu);
+      text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 14px; padding-bottom: 8px;
+      border-bottom: 2px solid var(--bleu);
+      display: inline-block;
+    }
+
+    .charts-row {
+      display: grid; gap: 16px; margin-bottom: 24px;
+    }
+    .charts-row.cols-2 { grid-template-columns: 1fr 1fr; }
+    .charts-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .charts-row.cols-1-2 { grid-template-columns: 1fr 2fr; }
+    .charts-row.cols-2-1 { grid-template-columns: 2fr 1fr; }
+
+    .chart-box {
+      background: var(--blanc); border: 1px solid var(--bordure);
+      border-radius: 12px; padding: 20px 22px;
+      box-shadow: var(--ombre);
+    }
+    .chart-box h3 {
+      font-size: 0.82rem; font-weight: 700; color: var(--bleu);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .chart-box .chart-sub {
+      font-size: 0.75rem; color: var(--gris); margin-bottom: 16px;
+    }
+    .chart-box canvas {
+      width: 100% !important;
+      max-height: 240px !important;
+    }
+
+    /* Entonnoir */
+    .entonnoir { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .entonnoir-item {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .entonnoir-label {
+      width: 100px; font-size: 0.78rem; font-weight: 600;
+      color: var(--bleu); text-align: right; flex-shrink: 0;
+    }
+    .entonnoir-bar-wrap {
+      flex: 1; background: var(--gris-clair);
+      border-radius: 999px; height: 28px; overflow: hidden;
+    }
+    .entonnoir-bar {
+      height: 100%; border-radius: 999px;
+      display: flex; align-items: center; padding-left: 10px;
+      font-size: 0.75rem; font-weight: 700; color: white;
+      transition: width 0.8s ease;
+    }
+    .entonnoir-count {
+      width: 40px; font-size: 0.82rem; font-weight: 700;
+      color: var(--bleu); text-align: right; flex-shrink: 0;
+    }
+
+    /* Table performances */
+    .perf-table { width: 100%; border-collapse: collapse; }
+    .perf-table th {
+      text-align: left; padding: 10px 12px;
+      font-size: 0.72rem; font-weight: 700; color: white;
+      background: var(--bleu); text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .perf-table td {
+      padding: 10px 12px; font-size: 0.85rem;
+      border-bottom: 1px solid var(--bordure);
+    }
+    .perf-table tbody tr:hover { background: var(--gris-clair); }
+    .perf-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Heatmap */
+    .heatmap-grid {
+      display: grid; grid-template-columns: repeat(12, 1fr);
+      gap: 6px; margin-top: 8px;
+    }
+    .heatmap-cell {
+      aspect-ratio: 1; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 600; color: white;
+      transition: transform 0.15s;
+    }
+    .heatmap-cell:hover { transform: scale(1.1); }
+    .heatmap-label {
+      font-size: 0.7rem; color: var(--gris); text-align: center;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 1100px) {
+      .kpi-band { grid-template-columns: repeat(3, 1fr); }
+      .charts-row.cols-3 { grid-template-columns: 1fr 1fr; }
+      .charts-row.cols-1-2 { grid-template-columns: 1fr; }
+      .charts-row.cols-2-1 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .kpi-band { grid-template-columns: 1fr 1fr; }
+      .charts-row.cols-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-mount"></div>
+  <div class="main-content">
+
+    <!-- En-tête -->
+    <div class="analytics-header">
+      <div>
+        <h1><i class="bi bi-graph-up-arrow"></i> Module Analytique</h1>
+        <p>Analyse de données — Indicateurs, tendances et aide à la décision</p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <a href="/api/export/rapport-ca.xlsx" style="
+          padding:8px 16px; background:rgba(255,255,255,0.15);
+          color:white; border-radius:8px; font-size:0.82rem; font-weight:600;
+          text-decoration:none; border:1px solid rgba(255,255,255,0.3);
+          display:flex; align-items:center; gap:6px;
+        "><i class="bi bi-download"></i> Export CA</a>
+        <a href="/api/export/rapport-pipeline.xlsx" style="
+          padding:8px 16px; background:rgba(255,255,255,0.15);
+          color:white; border-radius:8px; font-size:0.82rem; font-weight:600;
+          text-decoration:none; border:1px solid rgba(255,255,255,0.3);
+          display:flex; align-items:center; gap:6px;
+        "><i class="bi bi-download"></i> Export Pipeline</a>
+        <a href="/api/export/rapport-analytique.pdf" style="
+            padding:8px 16px; background:var(--or); color:var(--bleu);
+            border-radius:8px; font-size:0.82rem; font-weight:700;
+            text-decoration:none;
+            display:flex; align-items:center; gap:6px;
+        "><i class="bi bi-file-earmark-pdf-fill"></i> Rapport PDF</a>
+      </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="filters-bar">
+      <i class="bi bi-funnel-fill" style="color:var(--bleu);"></i>
+      <label>Période</label>
+      <select id="filter-periode">
+        <option value="3">3 derniers mois</option>
+        <option value="6">6 derniers mois</option>
+        <option value="12" selected>12 derniers mois</option>
+        <option value="24">24 derniers mois</option>
+      </select>
+      <label>Commercial</label>
+      <select id="filter-commercial">
+        <option value="">Tous</option>
+      </select>
+      <label>Secteur</label>
+      <select id="filter-secteur">
+        <option value="">Tous</option>
+      </select>
+      <button class="btn-appliquer" onclick="loadAnalytics()">
+        <i class="bi bi-arrow-clockwise"></i> Actualiser
+      </button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-band" id="kpi-band">
+      <div class="kpi-card bleu">
+        <i class="bi bi-currency-dollar kpi-icon" style="color:var(--bleu);"></i>
+        <span class="kpi-val" id="kpi-ca">—</span>
+        <span class="kpi-label">CA encaissé</span>
+        <span class="kpi-sub" id="kpi-ca-sub">—</span>
+      </div>
+      <div class="kpi-card vert">
+        <i class="bi bi-trophy-fill kpi-icon" style="color:#16a34a;"></i>
+        <span class="kpi-val" id="kpi-taux">—</span>
+        <span class="kpi-label">Taux de conversion</span>
+        <span class="kpi-sub" id="kpi-taux-sub">—</span>
+      </div>
+      <div class="kpi-card or">
+        <i class="bi bi-graph-up kpi-icon" style="color:var(--or);"></i>
+        <span class="kpi-val" id="kpi-pipeline">—</span>
+        <span class="kpi-label">CA en pipeline</span>
+        <span class="kpi-sub" id="kpi-pipeline-sub">—</span>
+      </div>
+      <div class="kpi-card rouge">
+        <i class="bi bi-exclamation-triangle-fill kpi-icon" style="color:#dc2626;"></i>
+        <span class="kpi-val" id="kpi-retard">—</span>
+        <span class="kpi-label">Impayés</span>
+        <span class="kpi-sub" id="kpi-retard-sub">—</span>
+      </div>
+      <div class="kpi-card violet">
+        <i class="bi bi-people-fill kpi-icon" style="color:#7c3aed;"></i>
+        <span class="kpi-val" id="kpi-contacts">—</span>
+        <span class="kpi-label">Contacts actifs</span>
+        <span class="kpi-sub" id="kpi-contacts-sub">—</span>
+      </div>
+    </div>
+
+    <!-- Section 1 : CA et tendances -->
+    <div style="margin-bottom:8px;">
+      <span class="section-title">📈 Chiffre d'affaires & Tendances</span>
+    </div>
+    <div class="charts-row cols-2-1">
+      <div class="chart-box">
+        <h3>Évolution du CA mensuel</h3>
+        <p class="chart-sub">Chiffre d'affaires encaissé mois par mois + courbe de tendance</p>
+        <canvas id="chart-ca-mensuel"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Prévision CA</h3>
+        <p class="chart-sub">Estimation du mois suivant par régression linéaire</p>
+        <div id="prevision-ca" style="display:flex; flex-direction:column; gap:12px; margin-top:16px;"></div>
+      </div>
+    </div>
+
+    <!-- Section 2 : Pipeline et conversion -->
+    <div style="margin-bottom:8px; margin-top:8px;">
+      <span class="section-title">🎯 Pipeline & Conversion</span>
+    </div>
+    <div class="charts-row cols-1-2">
+      <div class="chart-box">
+        <h3>Entonnoir de conversion</h3>
+        <p class="chart-sub">Nombre d'opportunités par étape du pipeline</p>
+        <div class="entonnoir" id="entonnoir"></div>
+      </div>
+      <div class="chart-box">
+        <h3>Taux de conversion mensuel</h3>
+        <p class="chart-sub">% d'opportunités gagnées sur le total créé chaque mois</p>
+        <canvas id="chart-taux-conversion"></canvas>
+      </div>
+    </div>
+
+    <!-- Section 3 : Performances commerciales -->
+    <div style="margin-bottom:8px; margin-top:8px;">
+      <span class="section-title">👥 Performances commerciales</span>
+    </div>
+    <div class="charts-row cols-2">
+      <div class="chart-box">
+        <h3>CA par commercial</h3>
+        <p class="chart-sub">Chiffre d'affaires généré et pipeline par agent</p>
+        <canvas id="chart-commerciaux"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Tableau de performances</h3>
+        <p class="chart-sub">Classement détaillé des commerciaux</p>
+        <div style="overflow-x:auto;">
+          <table class="perf-table" id="table-perf">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Commercial</th>
+                <th>Opportunités</th>
+                <th>Gagnées</th>
+                <th>CA gagné</th>
+                <th>Taux</th>
+              </tr>
+            </thead>
+            <tbody id="perf-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4 : Services et activité -->
+    <div style="margin-bottom:8px; margin-top:8px;">
+      <span class="section-title">🛠️ Services & Activité</span>
+    </div>
+    <div class="charts-row cols-2">
+      <div class="chart-box">
+        <h3>Top services par revenus</h3>
+        <p class="chart-sub">Services les plus performants en termes de CA généré</p>
+        <canvas id="chart-services"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Activité CRM mensuelle</h3>
+        <p class="chart-sub">Volume d'actions enregistrées dans le journal d'activités</p>
+        <canvas id="chart-activite"></canvas>
+      </div>
+    </div>
+
+    <!-- Section 5 : Facturation -->
+    <div style="margin-bottom:8px; margin-top:8px;">
+      <span class="section-title">🧾 Facturation & Recouvrement</span>
+    </div>
+    <div class="charts-row cols-3">
+      <div class="chart-box">
+        <h3>Répartition des factures</h3>
+        <p class="chart-sub">Distribution par statut</p>
+        <canvas id="chart-factures-statut"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Indicateurs de paiement</h3>
+        <p class="chart-sub">Santé financière du portefeuille</p>
+        <div id="indicateurs-paiement" style="display:flex; flex-direction:column; gap:12px; margin-top:8px;"></div>
+      </div>
+      <div class="chart-box">
+        <h3>Répartition des contacts</h3>
+        <p class="chart-sub">Prospects, clients, partenaires</p>
+        <canvas id="chart-contacts"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+  let charts = {};
+
+  function detruireChart(id) {
+    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  }
+
+  function creerChart(id, config) {
+    detruireChart(id);
+    charts[id] = new Chart(document.getElementById(id), config);
+    return charts[id];
+  }
+
+  // ── Charger les filtres ────────────────────────────────────────────────────
+  async function chargerFiltres() {
+    try {
+      const users = await api.get('/api/users');
+      const commerciaux = users.filter(u => u.role === 'commercial' || u.role === 'manager');
+      document.getElementById('filter-commercial').innerHTML =
+        '<option value="">Tous</option>' +
+        commerciaux.map(u => `<option value="${u.id}">${u.nom}</option>`).join('');
+
+      const contacts = await api.get('/api/contacts');
+      const secteurs = [...new Set(contacts.map(c => c.secteur).filter(Boolean))];
+      document.getElementById('filter-secteur').innerHTML =
+        '<option value="">Tous</option>' +
+        secteurs.map(s => `<option value="${s}">${s}</option>`).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  // ── Charger toutes les analytics ──────────────────────────────────────────
+  async function loadAnalytics() {
+    const periode     = document.getElementById('filter-periode').value;
+    const commercial  = document.getElementById('filter-commercial').value;
+    const secteur     = document.getElementById('filter-secteur').value;
+
+    const params = new URLSearchParams();
+    if (periode)    params.set('periode', periode);
+    if (commercial) params.set('commercial_id', commercial);
+    if (secteur)    params.set('secteur', secteur);
+
+    try {
+      // Charger tout en parallèle
+      const [
+        stats, caData, pipelineData, entonnoir, tauxConv,
+        commerciaux, services, activite, facturesStatut,
+        contactsType, paiement
+      ] = await Promise.all([
+        api.get('/api/stats/dashboard'),
+        api.get('/api/stats/ca-mensuel'),
+        api.get('/api/stats/pipeline-par-etape'),
+        api.get('/api/stats/entonnoir-conversion'),
+        api.get('/api/stats/taux-conversion-mensuel'),
+        api.get('/api/stats/ca-par-commercial'),
+        api.get('/api/stats/top-services'),
+        api.get('/api/stats/heatmap-activite'),
+        api.get('/api/stats/factures-par-statut'),
+        api.get('/api/stats/contacts-par-type'),
+        api.get('/api/stats/delai-paiement')
+      ]);
+
+      // ── KPIs ───────────────────────────────────────────────────────────────
+      const oppEnCours = pipelineData.filter(p => !['gagne','perdu'].includes(p.etape));
+      const caEnPipeline = oppEnCours.reduce((s, p) => s + p.montant, 0);
+      const totalOpps = pipelineData.reduce((s, p) => s + p.count, 0);
+      const gagneOpps = pipelineData.find(p => p.etape === 'gagne')?.count || 0;
+      const tauxConversion = totalOpps > 0 ? Math.round((gagneOpps / totalOpps) * 100) : 0;
+
+      document.getElementById('kpi-ca').textContent = formatMontant(stats.caTotal || 0);
+      document.getElementById('kpi-ca-sub').textContent = `${stats.totalFactures || 0} factures payées`;
+      document.getElementById('kpi-taux').textContent = `${tauxConversion}%`;
+      document.getElementById('kpi-taux-sub').textContent = `${gagneOpps} / ${totalOpps} opportunités`;
+      document.getElementById('kpi-pipeline').textContent = formatMontant(caEnPipeline);
+      document.getElementById('kpi-pipeline-sub').textContent = `${oppEnCours.reduce((s,p) => s+p.count, 0)} opps actives`;
+      document.getElementById('kpi-retard').textContent = formatMontant(paiement?.montant_retard || 0);
+      document.getElementById('kpi-retard-sub').textContent = `${paiement?.nb_retard || 0} facture(s) en retard`;
+      document.getElementById('kpi-contacts').textContent = stats.totalContacts || 0;
+      document.getElementById('kpi-contacts-sub').textContent = `${stats.totalClients || 0} clients actifs`;
+
+      // ── CA mensuel + tendance ──────────────────────────────────────────────
+      const caSeries = caData.map(d => Number(d.total) || 0);
+      const { slope, intercept } = linearRegression(caSeries);
+      const tendance = caSeries.map((_, i) => Math.max(0, intercept + slope * (i + 1)));
+      const predictedCA = Math.max(0, intercept + slope * (caSeries.length + 1));
+
+      creerChart('chart-ca-mensuel', {
+        type: 'bar',
+        data: {
+          labels: caData.map(d => d.mois),
+          datasets: [
+            {
+              label: 'CA encaissé (XOF)',
+              data: caSeries,
+              backgroundColor: 'rgba(11,37,69,0.75)',
+              borderRadius: 5,
+              order: 2
+            },
+            {
+              label: 'Tendance',
+              data: tendance,
+              type: 'line',
+              borderColor: '#c9a84c',
+              borderWidth: 2,
+              borderDash: [5, 4],
+              pointRadius: 0,
+              fill: false,
+              order: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      // Prévision CA
+      document.getElementById('prevision-ca').innerHTML = `
+        <div style="background:var(--bleu); color:white; border-radius:10px; padding:16px; text-align:center;">
+          <div style="font-size:0.75rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+            CA prévisionnel (mois prochain)
+          </div>
+          <div style="font-size:1.6rem; font-weight:800; color:var(--or-clair);">
+            ${formatMontant(predictedCA)}
+          </div>
+          <div style="font-size:0.75rem; color:rgba(255,255,255,0.6); margin-top:4px;">
+            Régression linéaire sur ${caSeries.length} mois
+          </div>
+        </div>
+        <div style="background:var(--gris-clair); border-radius:10px; padding:14px;">
+          <div style="font-size:0.75rem; font-weight:700; color:var(--bleu); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Indicateurs de tendance</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; font-size:0.82rem;">
+              <span style="color:var(--gris);">CA moyen mensuel</span>
+              <strong>${formatMontant(caSeries.length ? caSeries.reduce((s,v)=>s+v,0)/caSeries.length : 0)}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.82rem;">
+              <span style="color:var(--gris);">Meilleur mois</span>
+              <strong>${formatMontant(Math.max(...caSeries, 0))}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.82rem;">
+              <span style="color:var(--gris);">Tendance</span>
+              <strong style="color:${slope >= 0 ? '#16a34a' : '#dc2626'}">
+                ${slope >= 0 ? '↑ Croissante' : '↓ Décroissante'}
+              </strong>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // ── Entonnoir de conversion ────────────────────────────────────────────
+      const etapeLabels = {
+        nouveau: 'Nouveau', qualification: 'Qualification',
+        proposition: 'Proposition', negociation: 'Négociation', gagne: 'Gagné'
+      };
+      const etapeCouleurs = ['#0b2545','#1b3a6b','#c9a84c','#16a34a','#22c55e'];
+      const maxEntonnoir = Math.max(...entonnoir.map(e => e.count), 1);
+
+      document.getElementById('entonnoir').innerHTML = entonnoir.map((e, i) => `
+        <div class="entonnoir-item">
+          <div class="entonnoir-label">${etapeLabels[e.etape] || e.etape}</div>
+          <div class="entonnoir-bar-wrap">
+            <div class="entonnoir-bar" style="
+              width:${Math.max(5, (e.count / maxEntonnoir) * 100)}%;
+              background:${etapeCouleurs[i]};
+            ">${e.count > 0 ? e.count : ''}</div>
+          </div>
+          <div class="entonnoir-count">${e.count}</div>
+        </div>
+      `).join('');
+
+      // ── Taux de conversion mensuel ─────────────────────────────────────────
+      creerChart('chart-taux-conversion', {
+        type: 'line',
+        data: {
+          labels: tauxConv.map(d => d.mois),
+          datasets: [{
+            label: 'Taux de conversion (%)',
+            data: tauxConv.map(d => d.taux),
+            borderColor: '#16a34a',
+            backgroundColor: 'rgba(22,163,74,0.1)',
+            fill: true, tension: 0.35, pointRadius: 4,
+            pointBackgroundColor: '#16a34a'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 100,
+              ticks: { callback: v => v + '%' }
+            }
+          }
+        }
+      });
+
+      // ── Performances commerciaux ───────────────────────────────────────────
+      creerChart('chart-commerciaux', {
+        type: 'bar',
+        data: {
+          labels: commerciaux.map(c => c.nom),
+          datasets: [
+            {
+              label: 'CA gagné (XOF)',
+              data: commerciaux.map(c => c.ca_gagne),
+              backgroundColor: 'rgba(11,37,69,0.8)',
+              borderRadius: 4
+            },
+            {
+              label: 'CA pipeline (XOF)',
+              data: commerciaux.map(c => c.ca_pipeline),
+              backgroundColor: 'rgba(201,168,76,0.7)',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+          scales: { x: { stacked: false }, y: { beginAtZero: true } }
+        }
+      });
+
+      document.getElementById('perf-tbody').innerHTML = commerciaux.map((c, i) => {
+        const taux = c.nb_opps > 0 ? Math.round((c.nb_gagnes / c.nb_opps) * 100) : 0;
+        return `
+          <tr>
+            <td><strong>#${i + 1}</strong></td>
+            <td>${c.nom}</td>
+            <td>${c.nb_opps}</td>
+            <td>${c.nb_gagnes}</td>
+            <td><strong>${formatMontant(c.ca_gagne)}</strong></td>
+            <td>
+              <span style="
+                padding:2px 8px; border-radius:999px; font-size:0.75rem; font-weight:700;
+                background:${taux >= 50 ? '#dcfce7' : taux >= 25 ? '#fef3c7' : '#fee2e2'};
+                color:${taux >= 50 ? '#166534' : taux >= 25 ? '#92400e' : '#991b1b'};
+              ">${taux}%</span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // ── Top services ───────────────────────────────────────────────────────
+      creerChart('chart-services', {
+        type: 'bar',
+        data: {
+          labels: services.map(s => s.titre),
+          datasets: [{
+            label: 'Revenus (XOF)',
+            data: services.map(s => s.revenus),
+            backgroundColor: CHART_PALETTE,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true } }
+        }
+      });
+
+      // ── Activité CRM ───────────────────────────────────────────────────────
+      creerChart('chart-activite', {
+        type: 'bar',
+        data: {
+          labels: activite.map(d => d.mois),
+          datasets: [{
+            label: 'Actions enregistrées',
+            data: activite.map(d => d.count),
+            backgroundColor: 'rgba(124,58,237,0.7)',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      // ── Factures par statut ────────────────────────────────────────────────
+      const statutLabels = {
+        brouillon: 'Brouillon', envoye: 'Envoyé',
+        paye: 'Payé', en_retard: 'En retard', annule: 'Annulé'
+      };
+      creerChart('chart-factures-statut', {
+        type: 'doughnut',
+        data: {
+          labels: facturesStatut.map(d => statutLabels[d.statut] || d.statut),
+          datasets: [{ data: facturesStatut.map(d => d.count), backgroundColor: CHART_PALETTE }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+        }
+      });
+
+      // ── Indicateurs paiement ───────────────────────────────────────────────
+      document.getElementById('indicateurs-paiement').innerHTML = [
+        { label: 'Factures payées', val: paiement?.nb_payees || 0, icon: 'bi-check-circle-fill', color: '#16a34a' },
+        { label: 'Factures en retard', val: paiement?.nb_retard || 0, icon: 'bi-exclamation-circle-fill', color: '#dc2626' },
+        { label: 'Montant impayé', val: formatMontant(paiement?.montant_retard || 0), icon: 'bi-cash-stack', color: '#ea580c' },
+        { label: 'Délai moyen paiement', val: paiement?.delai_moyen ? `${Math.abs(Math.round(paiement.delai_moyen))} jours` : 'N/D', icon: 'bi-clock-fill', color: '#7c3aed' },
+      ].map(item => `
+        <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--gris-clair); border-radius:8px;">
+          <i class="bi ${item.icon}" style="color:${item.color}; font-size:1.1rem;"></i>
+          <div>
+            <div style="font-size:0.72rem; color:var(--gris); text-transform:uppercase; letter-spacing:0.5px;">${item.label}</div>
+            <div style="font-weight:700; font-size:0.9rem; color:var(--bleu);">${item.val}</div>
+          </div>
+        </div>
+      `).join('');
+
+      // ── Contacts par type ──────────────────────────────────────────────────
+      const labelsType = { prospect: 'Prospects', client: 'Clients', partenaire: 'Partenaires' };
+      creerChart('chart-contacts', {
+        type: 'doughnut',
+        data: {
+          labels: contactsType.map(d => labelsType[d.type] || d.type),
+          datasets: [{ data: contactsType.map(d => d.count), backgroundColor: CHART_PALETTE }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+        }
+      });
+
+    } catch(err) {
+      console.error('Erreur analytics:', err);
+    }
+  }
+
+  // ── Initialisation ─────────────────────────────────────────────────────────
+  async function init() {
+    const user = await initSidebar('analytique');
+    await chargerFiltres();
+    await loadAnalytics();
+  }
+
+  init();
+</script>
+</body>
+</html>

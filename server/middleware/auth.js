@@ -12,7 +12,6 @@ function requireAuth(req, res, next) {
   return res.redirect('/login.html');
 }
 
-// Vérifie que l'utilisateur a un des rôles autorisés
 function requireRole(...rolesAutorises) {
   return (req, res, next) => {
     if (!req.session || !req.session.role) {

@@ -6,18 +6,177 @@
   <title>Contacts — CRM</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    .fiche-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.5);
+      align-items: flex-start; justify-content: flex-end;
+    }
+    .fiche-overlay.open { display: flex; }
+    .fiche-panel {
+      width: 720px; max-width: 95vw; height: 100vh;
+      background: #f0f4f8; overflow-y: auto;
+      box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+      display: flex; flex-direction: column;
+      animation: slideIn 0.25s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to   { transform: translateX(0); }
+    }
+    .fiche-header {
+      background: linear-gradient(135deg, var(--bleu) 0%, var(--bleu2) 100%);
+      padding: 28px 28px 24px; color: white; flex-shrink: 0;
+    }
+    .fiche-header-top {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; margin-bottom: 16px;
+    }
+    .fiche-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 800; color: white;
+      flex-shrink: 0; margin-right: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    .fiche-info { flex: 1; }
+    .fiche-info h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
+    .fiche-info .entreprise { font-size: 0.88rem; color: rgba(255,255,255,0.75); margin-bottom: 8px; }
+    .fiche-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .fiche-badge {
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .fiche-badge-type { background: rgba(255,255,255,0.2); color: white; }
+    .fiche-badge-statut-actif    { background: #dcfce7; color: #166534; }
+    .fiche-badge-statut-prospect { background: #fef3c7; color: #92400e; }
+    .fiche-badge-statut-partenaire { background: #e0e7ff; color: #3730a3; }
+    .fiche-badge-statut-ancien   { background: #f3f4f6; color: #374151; }
+    .fiche-badge-statut-suspendu { background: #fee2e2; color: #991b1b; }
+    .fiche-header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .fiche-btn {
+      padding: 7px 14px; border-radius: 8px; border: none;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s;
+    }
+    .fiche-btn-edit { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
+    .fiche-btn-edit:hover { background: rgba(255,255,255,0.25); }
+    .fiche-btn-close { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.2); }
+    .fiche-btn-close:hover { background: rgba(255,255,255,0.2); }
+    .fiche-coords { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 16px; }
+    .fiche-coord { display: flex; align-items: center; gap: 7px; font-size: 0.82rem; color: rgba(255,255,255,0.8); }
+    .fiche-coord i { color: var(--or-clair); font-size: 0.9rem; }
+    .fiche-coord a { color: rgba(255,255,255,0.9); text-decoration: none; }
+    .fiche-coord a:hover { color: var(--or-clair); }
+    .fiche-kpis {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px;
+    }
+    .fiche-kpi { padding: 14px 16px; text-align: center; border-right: 1px solid rgba(255,255,255,0.1); }
+    .fiche-kpi:last-child { border-right: none; }
+    .fiche-kpi .kpi-val { font-size: 1.3rem; font-weight: 800; color: var(--or-clair); display: block; }
+    .fiche-kpi .kpi-label { font-size: 0.7rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .fiche-body { padding: 24px 28px; flex: 1; }
+    .fiche-tabs {
+      display: flex; gap: 4px; margin-bottom: 20px;
+      background: var(--blanc); border-radius: 10px;
+      padding: 4px; border: 1px solid var(--bordure);
+    }
+    .fiche-tab {
+      flex: 1; padding: 8px 12px; border: none; border-radius: 7px;
+      background: transparent; font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; color: var(--gris); transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .fiche-tab.active { background: var(--bleu); color: white; }
+    .fiche-tab:hover:not(.active) { background: var(--gris-clair); }
+    .fiche-tab-content { display: none; }
+    .fiche-tab-content.active { display: block; }
+    .fiche-section {
+      background: var(--blanc); border-radius: 12px;
+      border: 1px solid var(--bordure); margin-bottom: 16px; overflow: hidden;
+    }
+    .fiche-section-header {
+      padding: 14px 18px; background: var(--gris-clair);
+      border-bottom: 1px solid var(--bordure);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .fiche-section-header h4 {
+      font-size: 0.82rem; font-weight: 700; color: var(--bleu);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .fiche-section-body { padding: 16px 18px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .info-item label {
+      font-size: 0.72rem; font-weight: 700; color: var(--gris);
+      text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 3px;
+    }
+    .info-item span { font-size: 0.88rem; color: var(--gris-fonce); font-weight: 500; }
+    .timeline { display: flex; flex-direction: column; }
+    .timeline-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--bordure); }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-dot {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bleu-bg); color: var(--bleu);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; flex-shrink: 0; margin-top: 2px;
+    }
+    .timeline-content { flex: 1; }
+    .timeline-content .action { font-size: 0.85rem; font-weight: 600; color: var(--gris-fonce); }
+    .timeline-content .date { font-size: 0.75rem; color: var(--gris); margin-top: 2px; }
+    .mini-opp { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--bordure); }
+    .mini-opp:last-child { border-bottom: none; }
+    .mini-opp-titre { font-size: 0.85rem; font-weight: 600; flex: 1; color: var(--bleu); }
+    .mini-opp-montant { font-size: 0.85rem; font-weight: 700; color: var(--bleu); }
+    .mini-facture { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--bordure); }
+    .mini-facture:last-child { border-bottom: none; }
+    .mini-facture-num { font-size: 0.82rem; font-weight: 600; color: var(--bleu); flex: 1; }
+    .mini-facture-montant { font-size: 0.82rem; font-weight: 700; }
+    .mini-tache { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--bordure); }
+    .mini-tache:last-child { border-bottom: none; }
+    .mini-tache-titre { font-size: 0.85rem; flex: 1; }
+    .mini-tache-check {
+      width: 18px; height: 18px; border-radius: 4px;
+      border: 2px solid var(--bordure); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .mini-tache-check.done { background: var(--vert); border-color: var(--vert); color: white; }
+    .note-rapide { display: flex; gap: 8px; margin-top: 12px; }
+    .note-rapide textarea {
+      flex: 1; padding: 8px 12px; border: 1.5px solid var(--bordure);
+      border-radius: 8px; font-size: 0.85rem; font-family: inherit;
+      resize: none; height: 60px;
+    }
+    .note-rapide textarea:focus { outline: none; border-color: var(--bleu2); }
+    .note-rapide button {
+      padding: 8px 14px; background: var(--bleu); color: white;
+      border: none; border-radius: 8px; cursor: pointer;
+      font-size: 0.82rem; font-weight: 600; align-self: flex-end;
+    }
+    .empty-mini { text-align: center; padding: 20px; color: var(--gris); font-size: 0.82rem; }
+    .empty-mini i { display: block; font-size: 1.5rem; margin-bottom: 6px; opacity: 0.4; }
+  </style>
 </head>
 <body>
   <div class="app-layout">
     <div id="sidebar-mount"></div>
-
     <div class="main-content">
       <div class="page-header">
         <div>
           <h1>Contacts</h1>
           <p>Prospects, clients et partenaires</p>
         </div>
-        <button class="btn btn-primary" onclick="openModal()">+ Nouveau contact</button>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-secondary" onclick="ouvrirImport()">
+            <i class="bi bi-upload"></i> Importer CSV
+          </button>
+          <button class="btn btn-primary" onclick="openModal()">
+            <i class="bi bi-person-plus-fill"></i> Nouveau contact
+          </button>
+        </div>
       </div>
 
       <div class="toolbar">
@@ -40,21 +199,159 @@
               <th>Téléphone</th>
               <th>Email</th>
               <th>Ville</th>
+              <th>Statut</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="contacts-tbody"></tbody>
         </table>
         <div class="empty-state" id="empty-state" style="display:none">
-          <p>Aucun contact pour le moment. Cliquez sur "Nouveau contact" pour commencer.</p>
+          <i class="bi bi-people"></i>
+          <p>Aucun contact pour le moment.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Création/Édition -->
+  <!-- ═══ FICHE CONTACT ═══════════════════════════════════════════════════ -->
+  <div class="fiche-overlay" id="fiche-overlay" onclick="closeFiche(event)">
+    <div class="fiche-panel" id="fiche-panel">
+      <div class="fiche-header">
+        <div class="fiche-header-top">
+          <div style="display:flex; align-items:flex-start;">
+            <div class="fiche-avatar" id="fiche-avatar">?</div>
+            <div class="fiche-info">
+              <h2 id="fiche-nom">—</h2>
+              <div class="entreprise" id="fiche-entreprise">—</div>
+              <div class="fiche-badges">
+                <span class="fiche-badge fiche-badge-type" id="fiche-type">—</span>
+                <span class="fiche-badge" id="fiche-statut">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="fiche-header-actions">
+            <button class="fiche-btn fiche-btn-edit" id="fiche-btn-edit">
+              <i class="bi bi-pencil-fill"></i> Modifier
+            </button>
+            <button class="fiche-btn fiche-btn-close" onclick="closeFichePanel()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+        <div class="fiche-coords" id="fiche-coords"></div>
+        <div class="fiche-kpis">
+          <div class="fiche-kpi">
+            <span class="kpi-val" id="kpi-opps">0</span>
+            <span class="kpi-label">Opportunités</span>
+          </div>
+          <div class="fiche-kpi">
+            <span class="kpi-val" id="kpi-factures">0</span>
+            <span class="kpi-label">Factures</span>
+          </div>
+          <div class="fiche-kpi">
+            <span class="kpi-val" id="kpi-taches">0</span>
+            <span class="kpi-label">Tâches</span>
+          </div>
+          <div class="fiche-kpi">
+            <span class="kpi-val" id="kpi-ca">0</span>
+            <span class="kpi-label">CA (XOF)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fiche-body">
+        <div class="fiche-tabs">
+          <button class="fiche-tab active" onclick="switchTab('apercu', this)">
+            <i class="bi bi-grid-3x3-gap"></i> Aperçu
+          </button>
+          <button class="fiche-tab" onclick="switchTab('activites', this)">
+            <i class="bi bi-clock-history"></i> Activités
+          </button>
+          <button class="fiche-tab" onclick="switchTab('opportunites', this)">
+            <i class="bi bi-graph-up"></i> Opportunités
+          </button>
+          <button class="fiche-tab" onclick="switchTab('factures', this)">
+            <i class="bi bi-file-earmark-text"></i> Factures
+          </button>
+          <button class="fiche-tab" onclick="switchTab('taches', this)">
+            <i class="bi bi-check2-square"></i> Tâches
+          </button>
+        </div>
+
+        <div class="fiche-tab-content active" id="tab-apercu">
+          <div class="fiche-section">
+            <div class="fiche-section-header">
+              <h4><i class="bi bi-person-vcard"></i> Informations générales</h4>
+            </div>
+            <div class="fiche-section-body">
+              <div class="info-grid" id="info-generales"></div>
+            </div>
+          </div>
+          <div class="fiche-section">
+            <div class="fiche-section-header">
+              <h4><i class="bi bi-sticky-fill"></i> Notes</h4>
+            </div>
+            <div class="fiche-section-body">
+              <div id="fiche-notes" style="font-size:0.88rem; color:var(--gris); line-height:1.7;"></div>
+              <div class="note-rapide">
+                <textarea id="note-rapide-input" placeholder="Ajouter une note rapide..."></textarea>
+                <button onclick="sauvegarderNote()"><i class="bi bi-check2"></i> Sauver</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fiche-tab-content" id="tab-activites">
+          <div class="fiche-section">
+            <div class="fiche-section-header">
+              <h4><i class="bi bi-clock-history"></i> Historique des interactions</h4>
+            </div>
+            <div class="fiche-section-body">
+              <div class="timeline" id="fiche-timeline"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fiche-tab-content" id="tab-opportunites">
+          <div class="fiche-section">
+            <div class="fiche-section-header">
+              <h4><i class="bi bi-graph-up"></i> Opportunités liées</h4>
+              <button class="fiche-btn fiche-btn-edit" style="font-size:0.75rem; padding:5px 10px;"
+                onclick="window.location.href='/pipeline'">Voir le pipeline →</button>
+            </div>
+            <div class="fiche-section-body" id="fiche-opps-list"></div>
+          </div>
+        </div>
+
+        <div class="fiche-tab-content" id="tab-factures">
+          <div class="fiche-section">
+            <div class="fiche-section-header">
+              <h4><i class="bi bi-file-earmark-text"></i> Factures & Devis</h4>
+              <button class="fiche-btn fiche-btn-edit" style="font-size:0.75rem; padding:5px 10px;"
+                onclick="window.location.href='/factures'">Voir les factures →</button>
+            </div>
+            <div class="fiche-section-body" id="fiche-factures-list"></div>
+          </div>
+        </div>
+
+        <div class="fiche-tab-content" id="tab-taches">
+          <div class="fiche-section">
+            <div class="fiche-section-header">
+              <h4><i class="bi bi-check2-square"></i> Tâches liées</h4>
+              <button class="fiche-btn fiche-btn-edit" style="font-size:0.75rem; padding:5px 10px;"
+                onclick="window.location.href='/taches'">Voir les tâches →</button>
+            </div>
+            <div class="fiche-section-body" id="fiche-taches-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL CRÉATION/ÉDITION ════════════════════════════════════════ -->
   <div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
+    <div class="modal" style="position:relative;">
+      <button class="modal-close" onclick="closeModal()"><i class="bi bi-x"></i></button>
       <h2 id="modal-title">Nouveau contact</h2>
       <form id="contact-form">
         <input type="hidden" id="contact-id">
@@ -98,8 +395,8 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>SIRET</label>
-            <input type="text" id="siret" placeholder="SIRET client">
+            <label>Adresse</label>
+            <input type="text" id="adresse">
           </div>
           <div class="form-group">
             <label>Secteur</label>
@@ -118,10 +415,6 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Responsable</label>
-            <input type="text" id="responsable">
-          </div>
-          <div class="form-group">
             <label>Statut client</label>
             <select id="statut_client">
               <option value="actif">Actif</option>
@@ -130,6 +423,10 @@
               <option value="ancien">Ancien</option>
               <option value="suspendu">Suspendu</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label>Mode de paiement</label>
+            <input type="text" id="mode_paiement" placeholder="Virement, Mobile Money...">
           </div>
         </div>
         <div class="form-row">
@@ -142,23 +439,9 @@
             <input type="date" id="date_renouvellement">
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Mode de paiement</label>
-            <input type="text" id="mode_paiement" placeholder="Virement, Carte, Chèque">
-          </div>
-          <div class="form-group">
-            <label>Note comptable</label>
-            <input type="text" id="note_comptable" placeholder="Rappel comptable">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Note technique</label>
-          <textarea id="note_technique" rows="3"></textarea>
-        </div>
         <div class="form-group">
           <label>Notes</label>
-          <textarea id="notes" rows="3"></textarea>
+          <textarea id="notes" rows="3" placeholder="Notes libres sur ce contact..."></textarea>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
@@ -168,54 +451,284 @@
     </div>
   </div>
 
+  <!-- ═══ MODAL IMPORT CSV ═══════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="import-overlay">
+    <div class="modal" style="position:relative; max-width:520px;">
+      <button class="modal-close" onclick="fermerImport()"><i class="bi bi-x"></i></button>
+      <h2><i class="bi bi-upload" style="color:var(--bleu);"></i> Importer des contacts</h2>
+
+      <div style="background:#f0f4f8; border-radius:10px; padding:16px; margin-bottom:20px; font-size:0.85rem; color:var(--gris);">
+        <p style="font-weight:700; color:var(--bleu); margin-bottom:8px;">
+          <i class="bi bi-info-circle"></i> Format attendu
+        </p>
+        <p>Votre fichier CSV doit contenir ces colonnes :</p>
+        <code style="display:block; background:#fff; border-radius:6px; padding:8px 12px; margin:8px 0; font-size:0.78rem; border:1px solid var(--bordure); color:var(--bleu);">
+          nom, entreprise, email, telephone, ville, type, secteur
+        </code>
+        <p>La colonne <strong>nom</strong> est obligatoire. Le séparateur peut être une virgule ou un point-virgule.</p>
+      </div>
+
+      <a href="/api/import/template" style="
+        display:flex; align-items:center; gap:8px;
+        background:var(--bleu-bg); color:var(--bleu);
+        padding:10px 14px; border-radius:8px; margin-bottom:20px;
+        font-size:0.85rem; font-weight:600; text-decoration:none;
+        border:1px solid rgba(11,37,69,0.1);
+      ">
+        <i class="bi bi-download"></i> Télécharger le fichier modèle CSV
+      </a>
+
+      <div id="drop-zone" style="
+        border:2px dashed var(--bordure); border-radius:10px;
+        padding:32px; text-align:center; cursor:pointer;
+        transition:all 0.2s; margin-bottom:16px;
+      "
+        onclick="document.getElementById('fichier-csv').click()"
+        ondragover="event.preventDefault(); this.style.borderColor='var(--bleu)'; this.style.background='var(--bleu-bg)';"
+        ondragleave="this.style.borderColor='var(--bordure)'; this.style.background='';"
+        ondrop="dropFichier(event)"
+      >
+        <i class="bi bi-file-earmark-arrow-up" style="font-size:2rem; color:var(--gris); display:block; margin-bottom:10px;"></i>
+        <p style="font-size:0.88rem; color:var(--gris); margin:0;">
+          Glissez votre fichier ici ou <strong style="color:var(--bleu);">cliquez pour parcourir</strong>
+        </p>
+        <p style="font-size:0.75rem; color:var(--gris); margin-top:6px;">CSV uniquement — 5 MB max</p>
+        <p id="fichier-nom" style="font-size:0.85rem; font-weight:600; color:var(--bleu); margin-top:10px;"></p>
+      </div>
+
+      <input type="file" id="fichier-csv" accept=".csv" style="display:none" onchange="selectionnerFichier(this)">
+      <div id="import-resultat" style="display:none; margin-bottom:16px;"></div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fermerImport()">Annuler</button>
+        <button class="btn btn-primary" id="btn-importer" onclick="lancerImport()" disabled>
+          <i class="bi bi-upload"></i> Importer
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/common.js"></script>
   <script>
     let contacts = [];
+    let ficheContactId = null;
+    let fichierSelectionne = null;
 
     async function loadContacts() {
       await initSidebar('contacts');
       await refreshContacts();
-
       document.getElementById('search').addEventListener('input', refreshContacts);
       document.getElementById('filter-type').addEventListener('change', refreshContacts);
       document.getElementById('contact-form').addEventListener('submit', saveContact);
     }
 
     async function refreshContacts() {
-      const q = document.getElementById('search').value;
+      const q    = document.getElementById('search').value;
       const type = document.getElementById('filter-type').value;
       const params = new URLSearchParams();
-      if (q) params.set('q', q);
+      if (q)    params.set('q', q);
       if (type) params.set('type', type);
-
       contacts = await api.get('/api/contacts?' + params.toString());
       renderContacts();
     }
 
     function renderContacts() {
-      const tbody = document.getElementById('contacts-tbody');
+      const tbody      = document.getElementById('contacts-tbody');
       const emptyState = document.getElementById('empty-state');
-
-      if (contacts.length === 0) {
+      if (!contacts.length) {
         tbody.innerHTML = '';
         emptyState.style.display = 'block';
         return;
       }
       emptyState.style.display = 'none';
-
+      const statutLabel = { actif: 'Actif', prospect: 'Prospect', partenaire: 'Partenaire', ancien: 'Ancien', suspendu: 'Suspendu' };
+      const statutClass = { actif: 'badge-client', prospect: 'badge-prospect', partenaire: 'badge-partenaire', ancien: 'badge-annule', suspendu: 'badge-en_retard' };
       tbody.innerHTML = contacts.map(c => `
-        <tr onclick="editContact(${c.id})">
-          <td><strong>${c.nom}</strong></td>
+        <tr onclick="ouvrirFiche(${c.id})" style="cursor:pointer;">
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:32px; height:32px; border-radius:50%; background:var(--bleu); color:white; display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:700; flex-shrink:0;">
+                ${c.nom.charAt(0).toUpperCase()}
+              </div>
+              <strong>${c.nom}</strong>
+            </div>
+          </td>
           <td>${c.entreprise || '—'}</td>
           <td>${badge(c.type)}</td>
-          <td>${c.telephone || '—'}</td>
-          <td>${c.email || '—'}</td>
+          <td>${c.telephone ? `<a href="tel:${c.telephone}" onclick="event.stopPropagation()">${c.telephone}</a>` : '—'}</td>
+          <td>${c.email ? `<a href="mailto:${c.email}" onclick="event.stopPropagation()">${c.email}</a>` : '—'}</td>
           <td>${c.ville || '—'}</td>
-          <td><button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteContact(${c.id})">Suppr.</button></td>
+          <td><span class="badge ${statutClass[c.statut_client] || ''}">${statutLabel[c.statut_client] || c.statut_client}</span></td>
+          <td>
+            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteContact(${c.id})">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
         </tr>
       `).join('');
     }
 
+    // ── FICHE CONTACT ──────────────────────────────────────────────────────
+    async function ouvrirFiche(id) {
+      ficheContactId = id;
+      document.getElementById('fiche-overlay').classList.add('open');
+      try {
+        const c = await api.get('/api/contacts/' + id);
+        renderFicheHeader(c);
+        renderFicheApercu(c);
+        renderFicheActivites(c.activites || []);
+        renderFicheOpps(c.opportunites || []);
+        renderFicheFactures(c.factures || []);
+        renderFicheTaches(c.taches || []);
+        document.getElementById('fiche-btn-edit').onclick = () => { closeFichePanel(); editContact(id); };
+      } catch (e) { console.error(e); }
+    }
+
+    function renderFicheHeader(c) {
+      document.getElementById('fiche-avatar').textContent = c.nom.charAt(0).toUpperCase();
+      document.getElementById('fiche-nom').textContent = c.nom;
+      document.getElementById('fiche-entreprise').textContent = c.entreprise || 'Sans entreprise';
+      const typeLabels = { prospect: 'Prospect', client: 'Client', partenaire: 'Partenaire' };
+      document.getElementById('fiche-type').textContent = typeLabels[c.type] || c.type;
+      const statutEl = document.getElementById('fiche-statut');
+      const statutLabels = { actif: 'Actif', prospect: 'Prospect', partenaire: 'Partenaire', ancien: 'Ancien', suspendu: 'Suspendu' };
+      statutEl.textContent = statutLabels[c.statut_client] || c.statut_client;
+      statutEl.className = `fiche-badge fiche-badge-statut-${c.statut_client}`;
+      const coords = [];
+      if (c.telephone) coords.push(`<div class="fiche-coord"><i class="bi bi-telephone-fill"></i><a href="tel:${c.telephone}">${c.telephone}</a></div>`);
+      if (c.email)     coords.push(`<div class="fiche-coord"><i class="bi bi-envelope-fill"></i><a href="mailto:${c.email}">${c.email}</a></div>`);
+      if (c.ville)     coords.push(`<div class="fiche-coord"><i class="bi bi-geo-alt-fill"></i><span>${c.ville}${c.pays ? ', ' + c.pays : ''}</span></div>`);
+      if (c.site_web)  coords.push(`<div class="fiche-coord"><i class="bi bi-globe"></i><a href="${c.site_web}" target="_blank">${c.site_web}</a></div>`);
+      document.getElementById('fiche-coords').innerHTML = coords.join('');
+      const opps = c.opportunites || [], factures = c.factures || [], taches = c.taches || [];
+      const ca = factures.filter(f => f.statut === 'paye' && f.type === 'facture').reduce((s, f) => s + (f.montant_ttc || 0), 0);
+      document.getElementById('kpi-opps').textContent     = opps.length;
+      document.getElementById('kpi-factures').textContent = factures.length;
+      document.getElementById('kpi-taches').textContent   = taches.length;
+      document.getElementById('kpi-ca').textContent       = formatMontant(ca).replace(' XOF', '');
+    }
+
+    function renderFicheApercu(c) {
+      const champs = [
+        { label: 'Code client',      val: c.code_client },
+        { label: 'Secteur',          val: c.secteur },
+        { label: 'Responsable',      val: c.responsable },
+        { label: 'Mode de paiement', val: c.mode_paiement },
+        { label: "Date d'entrée",    val: formatDate(c.date_entree) },
+        { label: 'Renouvellement',   val: formatDate(c.date_renouvellement) },
+      ];
+      document.getElementById('info-generales').innerHTML = champs.map(ch => `
+        <div class="info-item"><label>${ch.label}</label><span>${ch.val || '—'}</span></div>
+      `).join('');
+      const notes = [c.notes, c.note_technique, c.note_comptable].filter(Boolean);
+      document.getElementById('fiche-notes').innerHTML = notes.length
+        ? notes.map(n => `<p style="margin-bottom:8px;">${n}</p>`).join('')
+        : '<p style="color:var(--gris); font-style:italic;">Aucune note pour ce contact.</p>';
+      document.getElementById('note-rapide-input').value = '';
+    }
+
+    function renderFicheActivites(activites) {
+      const icons = {
+        contact_cree: 'bi-person-plus-fill', lead_public: 'bi-globe',
+        opportunite_creee: 'bi-graph-up', opportunite_etape: 'bi-arrow-right-circle-fill',
+        facture_creee: 'bi-file-earmark-plus-fill', devis_cree: 'bi-file-earmark-text-fill',
+        facture_statut: 'bi-check-circle-fill', contact_modifie: 'bi-pencil-fill',
+        tache_creee: 'bi-check2-square', tache_statut: 'bi-check2-circle',
+        contact_importe: 'bi-upload', tache_auto: 'bi-robot',
+      };
+      const timeline = document.getElementById('fiche-timeline');
+      if (!activites.length) {
+        timeline.innerHTML = `<div class="empty-mini"><i class="bi bi-clock-history"></i>Aucune activité enregistrée</div>`;
+        return;
+      }
+      timeline.innerHTML = activites.map(a => `
+        <div class="timeline-item">
+          <div class="timeline-dot"><i class="bi ${icons[a.type] || 'bi-dot'}"></i></div>
+          <div class="timeline-content">
+            <div class="action">${a.description}</div>
+            <div class="date">${formatDate(a.created_at)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderFicheOpps(opps) {
+      const el = document.getElementById('fiche-opps-list');
+      if (!opps.length) { el.innerHTML = `<div class="empty-mini"><i class="bi bi-graph-up"></i>Aucune opportunité liée</div>`; return; }
+      const etapeLabel = { nouveau: 'Nouveau', qualification: 'Qualification', proposition: 'Proposition', negociation: 'Négociation', gagne: 'Gagné', perdu: 'Perdu' };
+      el.innerHTML = opps.map(o => `
+        <div class="mini-opp">
+          <div>
+            <div class="mini-opp-titre">${o.titre}</div>
+            <span class="badge badge-${o.etape}" style="margin-top:4px;">${etapeLabel[o.etape] || o.etape}</span>
+          </div>
+          <div class="mini-opp-montant">${formatMontant(o.montant || 0)}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderFicheFactures(factures) {
+      const el = document.getElementById('fiche-factures-list');
+      if (!factures.length) { el.innerHTML = `<div class="empty-mini"><i class="bi bi-file-earmark-text"></i>Aucune facture liée</div>`; return; }
+      const statutColor = { paye: '#166534', envoye: '#1e40af', brouillon: '#374151', en_retard: '#991b1b', annule: '#6b7280' };
+      el.innerHTML = factures.map(f => `
+        <div class="mini-facture">
+          <div>
+            <div class="mini-facture-num">${f.numero}</div>
+            <div style="font-size:0.75rem; color:var(--gris);">${f.type === 'facture' ? 'Facture' : 'Devis'} · ${formatDate(f.date_emission)}</div>
+          </div>
+          <span class="badge badge-${f.statut}">${f.statut.replace('_', ' ')}</span>
+          <div class="mini-facture-montant" style="color:${statutColor[f.statut] || 'var(--bleu)'};">${formatMontant(f.montant_ttc || 0)}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderFicheTaches(taches) {
+      const el = document.getElementById('fiche-taches-list');
+      if (!taches.length) { el.innerHTML = `<div class="empty-mini"><i class="bi bi-check2-square"></i>Aucune tâche liée</div>`; return; }
+      el.innerHTML = taches.map(t => `
+        <div class="mini-tache">
+          <div class="mini-tache-check ${t.statut === 'terminee' ? 'done' : ''}">
+            ${t.statut === 'terminee' ? '<i class="bi bi-check2"></i>' : ''}
+          </div>
+          <div class="mini-tache-titre" style="text-decoration:${t.statut === 'terminee' ? 'line-through' : 'none'}; color:${t.statut === 'terminee' ? 'var(--gris)' : 'var(--gris-fonce)'};">${t.titre}</div>
+          <span class="badge badge-${t.priorite}">${t.priorite}</span>
+          ${t.date_echeance ? `<span style="font-size:0.75rem; color:var(--gris);">${formatDate(t.date_echeance)}</span>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function sauvegarderNote() {
+      const note = document.getElementById('note-rapide-input').value.trim();
+      if (!note || !ficheContactId) return;
+      const c = await api.get('/api/contacts/' + ficheContactId);
+      const notesExistantes = c.notes || '';
+      const nouvellesNotes  = notesExistantes
+        ? `${notesExistantes}\n[${new Date().toLocaleDateString('fr-FR')}] ${note}`
+        : `[${new Date().toLocaleDateString('fr-FR')}] ${note}`;
+      await api.put('/api/contacts/' + ficheContactId, { ...c, notes: nouvellesNotes });
+      document.getElementById('note-rapide-input').value = '';
+      await ouvrirFiche(ficheContactId);
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.fiche-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.fiche-tab-content').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + tabId).classList.add('active');
+    }
+
+    function closeFiche(event) {
+      if (event.target === document.getElementById('fiche-overlay')) closeFichePanel();
+    }
+
+    function closeFichePanel() {
+      document.getElementById('fiche-overlay').classList.remove('open');
+      document.querySelectorAll('.fiche-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+      document.querySelectorAll('.fiche-tab-content').forEach((t, i) => t.classList.toggle('active', i === 0));
+    }
+
+    // ── MODAL CRÉATION/ÉDITION ─────────────────────────────────────────────
     function openModal() {
       document.getElementById('modal-title').textContent = 'Nouveau contact';
       document.getElementById('contact-form').reset();
@@ -227,28 +740,24 @@
     function editContact(id) {
       const c = contacts.find(x => x.id === id);
       if (!c) return;
-      document.getElementById('modal-title').textContent = 'Modifier le contact';
-      document.getElementById('contact-id').value = c.id;
-      document.getElementById('nom').value = c.nom;
-      document.getElementById('type').value = c.type;
-      document.getElementById('entreprise').value = c.entreprise || '';
-      document.getElementById('telephone').value = c.telephone || '';
-      document.getElementById('email').value = c.email || '';
-      document.getElementById('ville').value = c.ville || '';
-      document.getElementById('pays').value = c.pays || 'Burkina Faso';
-      document.getElementById('adresse').value = c.adresse || '';
-      document.getElementById('siret').value = c.siret || '';
-      document.getElementById('secteur').value = c.secteur || '';
-      document.getElementById('site_web').value = c.site_web || '';
-      document.getElementById('code_client').value = c.code_client || '';
-      document.getElementById('responsable').value = c.responsable || '';
-      document.getElementById('statut_client').value = c.statut_client || 'actif';
-      document.getElementById('date_entree').value = c.date_entree || '';
-      document.getElementById('date_renouvellement').value = c.date_renouvellement || '';
-      document.getElementById('mode_paiement').value = c.mode_paiement || '';
-      document.getElementById('note_comptable').value = c.note_comptable || '';
-      document.getElementById('note_technique').value = c.note_technique || '';
-      document.getElementById('notes').value = c.notes || '';
+      document.getElementById('modal-title').textContent       = 'Modifier le contact';
+      document.getElementById('contact-id').value              = c.id;
+      document.getElementById('nom').value                     = c.nom;
+      document.getElementById('type').value                    = c.type;
+      document.getElementById('entreprise').value              = c.entreprise || '';
+      document.getElementById('telephone').value               = c.telephone || '';
+      document.getElementById('email').value                   = c.email || '';
+      document.getElementById('ville').value                   = c.ville || '';
+      document.getElementById('pays').value                    = c.pays || 'Burkina Faso';
+      document.getElementById('adresse').value                 = c.adresse || '';
+      document.getElementById('secteur').value                 = c.secteur || '';
+      document.getElementById('site_web').value                = c.site_web || '';
+      document.getElementById('code_client').value             = c.code_client || '';
+      document.getElementById('statut_client').value           = c.statut_client || 'actif';
+      document.getElementById('mode_paiement').value           = c.mode_paiement || '';
+      document.getElementById('date_entree').value             = c.date_entree || '';
+      document.getElementById('date_renouvellement').value     = c.date_renouvellement || '';
+      document.getElementById('notes').value                   = c.notes || '';
       document.getElementById('modal-overlay').classList.add('open');
     }
 
@@ -268,37 +777,100 @@
         ville: document.getElementById('ville').value,
         pays: document.getElementById('pays').value,
         adresse: document.getElementById('adresse').value,
-        siret: document.getElementById('siret').value,
         secteur: document.getElementById('secteur').value,
         site_web: document.getElementById('site_web').value,
         code_client: document.getElementById('code_client').value,
-        responsable: document.getElementById('responsable').value,
         statut_client: document.getElementById('statut_client').value,
+        mode_paiement: document.getElementById('mode_paiement').value,
         date_entree: document.getElementById('date_entree').value,
         date_renouvellement: document.getElementById('date_renouvellement').value,
-        mode_paiement: document.getElementById('mode_paiement').value,
-        note_comptable: document.getElementById('note_comptable').value,
-        note_technique: document.getElementById('note_technique').value,
-        notes: document.getElementById('notes').value
+        notes: document.getElementById('notes').value,
       };
-
       try {
-        if (id) {
-          await api.put('/api/contacts/' + id, payload);
-        } else {
-          await api.post('/api/contacts', payload);
-        }
+        if (id) { await api.put('/api/contacts/' + id, payload); }
+        else    { await api.post('/api/contacts', payload); }
         closeModal();
         await refreshContacts();
-      } catch (err) {
-        alert(err.message);
-      }
+      } catch (err) { alert(err.message); }
     }
 
     async function deleteContact(id) {
       if (!confirm('Supprimer ce contact ? Cette action est irréversible.')) return;
       await api.delete('/api/contacts/' + id);
       await refreshContacts();
+    }
+
+    // ── IMPORT CSV ─────────────────────────────────────────────────────────
+    function ouvrirImport() {
+      document.getElementById('import-overlay').classList.add('open');
+      document.getElementById('import-resultat').style.display = 'none';
+      document.getElementById('fichier-nom').textContent = '';
+      document.getElementById('btn-importer').disabled = true;
+      fichierSelectionne = null;
+    }
+
+    function fermerImport() {
+      document.getElementById('import-overlay').classList.remove('open');
+      document.getElementById('fichier-csv').value = '';
+    }
+
+    function selectionnerFichier(input) {
+      if (!input.files.length) return;
+      fichierSelectionne = input.files[0];
+      document.getElementById('fichier-nom').textContent = `✓ ${fichierSelectionne.name}`;
+      document.getElementById('btn-importer').disabled = false;
+    }
+
+    function dropFichier(event) {
+      event.preventDefault();
+      const dropZone = document.getElementById('drop-zone');
+      dropZone.style.borderColor = 'var(--bordure)';
+      dropZone.style.background  = '';
+      const file = event.dataTransfer.files[0];
+      if (!file) return;
+      if (!file.name.endsWith('.csv')) { alert('Uniquement les fichiers CSV sont acceptés.'); return; }
+      fichierSelectionne = file;
+      document.getElementById('fichier-nom').textContent = `✓ ${file.name}`;
+      document.getElementById('btn-importer').disabled = false;
+    }
+
+    async function lancerImport() {
+      if (!fichierSelectionne) return;
+      const btn = document.getElementById('btn-importer');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Import en cours...';
+      const formData = new FormData();
+      formData.append('fichier', fichierSelectionne);
+      try {
+        const res  = await fetch('/api/import/contacts', { method: 'POST', credentials: 'same-origin', body: formData });
+        const data = await res.json();
+        const resultatEl = document.getElementById('import-resultat');
+        resultatEl.style.display = 'block';
+        if (data.success) {
+          resultatEl.innerHTML = `
+            <div style="background:#dcfce7; border:1px solid #bbf7d0; border-radius:8px; padding:14px 16px;">
+              <div style="font-weight:700; color:#166534; margin-bottom:8px;">
+                <i class="bi bi-check2-circle"></i> ${data.message}
+              </div>
+              ${data.erreurs?.length ? `
+                <div style="margin-top:8px;">
+                  <p style="font-size:0.78rem; color:#6b7280; font-weight:600; margin-bottom:4px;">Contacts ignorés :</p>
+                  ${data.erreurs.map(e => `<div style="font-size:0.75rem; color:#6b7280; padding:2px 0;">• ${e}</div>`).join('')}
+                </div>
+              ` : ''}
+            </div>`;
+          await refreshContacts();
+        } else {
+          resultatEl.innerHTML = `
+            <div style="background:#fee2e2; border:1px solid #fecaca; border-radius:8px; padding:14px 16px; color:#991b1b; font-size:0.85rem;">
+              <i class="bi bi-exclamation-triangle"></i> ${data.error}
+            </div>`;
+        }
+      } catch (err) { alert('Erreur réseau : ' + err.message); }
+      finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-upload"></i> Importer';
+      }
     }
 
     loadContacts();

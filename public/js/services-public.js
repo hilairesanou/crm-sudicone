@@ -1,5 +1,8 @@
+// public/js/services-public.js
 let publicServices = [];
-let publicPacks = [];
+let publicPacks    = [];
+let selectedServiceId = null;
+let selectedPackId    = null;
 
 async function initServicesPublicPage() {
   try {
@@ -8,128 +11,223 @@ async function initServicesPublicPage() {
       api.get('/api/public/packs')
     ]);
     publicServices = services || [];
-    publicPacks = packs || [];
+    publicPacks    = packs    || [];
     renderServices(publicServices);
     renderPacks(publicPacks);
-    populateOptions(publicServices, publicPacks);
-  } catch (error) {
-    showFeedback('subscribe-feedback', 'Impossible de charger les services. Réessayez plus tard.', 'error');
-    console.error(error);
+    populateSelects(publicServices, publicPacks);
+  } catch (err) {
+    console.error(err);
   }
 }
 
+// ── Rendu services ────────────────────────────────────────────────────────────
 function renderServices(services) {
-  const container = document.getElementById('services-carousel');
-  container.innerHTML = services.map(service => `
-    <article class="product-card">
-      <div class="product-badge">${service.categorie}</div>
-      <h3>${service.titre}</h3>
-      <p>${service.description || 'Service professionnel SUDICONE.'}</p>
-      <div class="product-meta">
-        <strong>${formatMontant(service.prix_ht)}</strong>
-        <span>${service.duree_mois} mois</span>
+  const grid = document.getElementById('services-grid');
+  if (!services.length) {
+    grid.innerHTML = `<p style="color:#9ca3af; text-align:center; grid-column:1/-1;">Aucun service disponible pour le moment.</p>`;
+    return;
+  }
+  grid.innerHTML = services.map(s => `
+    <article class="service-card">
+      <span class="card-badge">${s.categorie}</span>
+      <h3>${s.titre}</h3>
+      <p>${s.description || 'Service professionnel SUDICONE.'}</p>
+      <div class="card-price">
+        <strong>${formatMontant(s.prix_ht)}</strong>
+        <span>HT / ${s.duree_mois} mois</span>
       </div>
-      <div class="product-actions">
-        <button class="btn btn-secondary" type="button" onclick="selectService(${service.id})">Choisir</button>
-        <button class="btn btn-sm btn-primary" type="button" onclick="showServiceDetails(${service.id})">Détails</button>
+      <div class="card-actions">
+        <button class="btn-choisir" id="btn-service-${s.id}"
+          onclick="selectService(${s.id})">
+          <i class="bi bi-check2"></i> Choisir
+        </button>
+        <button class="btn-detail" onclick="showServiceDetails(${s.id})">
+          Détails
+        </button>
       </div>
     </article>
   `).join('');
 }
 
+// ── Rendu packs ───────────────────────────────────────────────────────────────
 function renderPacks(packs) {
-  const container = document.getElementById('packs-carousel');
-  container.innerHTML = packs.map(pack => `
-    <article class="product-card product-card-pack">
-      <div class="product-badge pack-badge">Pack</div>
-      <h3>${pack.nom}</h3>
-      <p>${pack.description || 'Pack complet avec services intégrés.'}</p>
-      <div class="product-meta">
-        <strong>${formatMontant(pack.prix_ht)}</strong>
-        <span>${pack.duree_mois} mois</span>
+  const grid = document.getElementById('packs-grid');
+  if (!packs.length) {
+    grid.innerHTML = `<p style="color:#9ca3af; text-align:center; grid-column:1/-1;">Aucun pack disponible pour le moment.</p>`;
+    return;
+  }
+  grid.innerHTML = packs.map((p, i) => `
+    <article class="service-card ${i === 0 ? 'featured' : ''}">
+      ${i === 0 ? '<span class="card-badge recommended">⭐ Recommandé</span>' : '<span class="card-badge gold">Pack</span>'}
+      <h3>${p.nom}</h3>
+      <p>${p.description || 'Pack tout-en-un pour votre communication.'}</p>
+      <div class="pack-services-list">
+        ${p.services.map(s => `<span>${s.titre}</span>`).join('')}
       </div>
-      <div class="pack-services">${pack.services.map(s => `<span>${s.titre}</span>`).join('')}</div>
-      <div class="product-actions">
-        <button class="btn btn-secondary" type="button" onclick="selectPack(${pack.id})">Choisir</button>
-        <button class="btn btn-sm btn-primary" type="button" onclick="showPackDetails(${pack.id})">Détails</button>
+      <div class="card-price">
+        <strong>${formatMontant(p.prix_ht)}</strong>
+        <span>HT / ${p.duree_mois} mois</span>
+      </div>
+      <div class="card-actions">
+        <button class="btn-choisir" id="btn-pack-${p.id}"
+          onclick="selectPack(${p.id})">
+          <i class="bi bi-check2"></i> Choisir ce pack
+        </button>
+        <button class="btn-detail" onclick="showPackDetails(${p.id})">
+          Détails
+        </button>
       </div>
     </article>
   `).join('');
 }
 
-function populateOptions(services, packs) {
-  const serviceSelect = document.getElementById('selected-service');
-  const packSelect = document.getElementById('selected-pack');
-  serviceSelect.innerHTML = '<option value="">Aucun service sélectionné</option>' + services.map(s => `<option value="${s.id}">${s.titre} — ${formatMontant(s.prix_ht)}</option>`).join('');
-  packSelect.innerHTML = '<option value="">Aucun pack sélectionné</option>' + packs.map(p => `<option value="${p.id}">${p.nom} — ${formatMontant(p.prix_ht)}</option>`).join('');
+// ── Remplir les selects ───────────────────────────────────────────────────────
+function populateSelects(services, packs) {
+  document.getElementById('selected-service').innerHTML =
+    '<option value="">— Choisir un service —</option>' +
+    services.map(s => `<option value="${s.id}">${s.titre} — ${formatMontant(s.prix_ht)}</option>`).join('');
+
+  document.getElementById('selected-pack').innerHTML =
+    '<option value="">— Choisir un pack —</option>' +
+    packs.map(p => `<option value="${p.id}">${p.nom} — ${formatMontant(p.prix_ht)}</option>`).join('');
+
+  // Écouter les changements dans les selects
+  document.getElementById('selected-service').addEventListener('change', function() {
+    if (this.value) {
+      const s = publicServices.find(x => x.id === parseInt(this.value));
+      if (s) selectService(s.id, false);
+    }
+  });
+  document.getElementById('selected-pack').addEventListener('change', function() {
+    if (this.value) {
+      const p = publicPacks.find(x => x.id === parseInt(this.value));
+      if (p) selectPack(p.id, false);
+    }
+  });
 }
 
-function scrollCarousel(id, direction) {
-  const carousel = document.getElementById(id);
-  carousel.scrollBy({ left: direction * 400, behavior: 'smooth' });
-}
-
-function selectService(id) {
-  document.getElementById('selected-service').value = id;
-  document.getElementById('selected-pack').value = '';
-  document.getElementById('tarif_ht').value = publicServices.find(s => s.id === id)?.prix_ht || '';
-  showFeedback('subscribe-feedback', 'Le service a été sélectionné. Complétez le formulaire et envoyez.', 'success');
-}
-
-function selectPack(id) {
-  document.getElementById('selected-pack').value = id;
-  document.getElementById('selected-service').value = '';
-  document.getElementById('tarif_ht').value = publicPacks.find(p => p.id === id)?.prix_ht || '';
-  showFeedback('subscribe-feedback', 'Le pack a été sélectionné. Complétez le formulaire et envoyez.', 'success');
-}
-
-function showServiceDetails(id) {
-  const service = publicServices.find(item => item.id === id);
+// ── Sélectionner un service ───────────────────────────────────────────────────
+function selectService(id, scroll = true) {
+  const service = publicServices.find(s => s.id === id);
   if (!service) return;
-  const html = `
-    <div class="detail-header">
-      <div>
-        <span class="eyebrow">Service</span>
-        <h2>${service.titre}</h2>
-      </div>
-      <div class="detail-price">${formatMontant(service.prix_ht)}</div>
-    </div>
-    <p>${service.description || 'Description détaillée non disponible.'}</p>
-    <div class="detail-grid">
-      <div><strong>Catégorie</strong><span>${service.categorie}</span></div>
-      <div><strong>Durée</strong><span>${service.duree_mois} mois</span></div>
-      <div><strong>Code</strong><span>${service.code || 'N/A'}</span></div>
-    </div>
-    <div class="detail-actions"><button class="btn btn-primary" type="button" onclick="selectService(${service.id}); closeDetailModal();">Choisir ce service</button></div>
-  `;
-  openDetailModal(html);
+
+  selectedServiceId = id;
+  selectedPackId    = null;
+
+  // Mettre à jour les selects
+  document.getElementById('selected-service').value = id;
+  document.getElementById('selected-pack').value    = '';
+
+  // Mettre à jour le tarif
+  document.getElementById('tarif_ht').value = service.prix_ht || '';
+
+  // Mettre à jour la box visuelle
+  const box = document.getElementById('service-box');
+  box.classList.add('active');
+  document.getElementById('service-label').textContent =
+    `${service.titre} — ${formatMontant(service.prix_ht)}`;
+
+  document.getElementById('pack-box').classList.remove('active');
+  document.getElementById('pack-label').textContent = 'Aucun pack sélectionné';
+
+  // Mettre à jour les boutons
+  document.querySelectorAll('[id^="btn-service-"]').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('[id^="btn-pack-"]').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById(`btn-service-${id}`);
+  if (btn) { btn.classList.add('selected'); btn.innerHTML = '<i class="bi bi-check2-circle"></i> Sélectionné'; }
+
+  showToast(`✓ ${service.titre} sélectionné`);
+  if (scroll) document.getElementById('souscrire').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function showPackDetails(id) {
-  const pack = publicPacks.find(item => item.id === id);
+// ── Sélectionner un pack ──────────────────────────────────────────────────────
+function selectPack(id, scroll = true) {
+  const pack = publicPacks.find(p => p.id === id);
   if (!pack) return;
-  const servicesHtml = pack.services.map(s => `<li>${s.titre}</li>`).join('');
-  const html = `
-    <div class="detail-header">
-      <div>
-        <span class="eyebrow">Pack</span>
-        <h2>${pack.nom}</h2>
-      </div>
-      <div class="detail-price">${formatMontant(pack.prix_ht)}</div>
-    </div>
-    <p>${pack.description || 'Pack tout-en-un pour la gestion commerciale et la facturation.'}</p>
-    <div class="detail-grid">
-      <div><strong>Durée</strong><span>${pack.duree_mois} mois</span></div>
-      <div><strong>Services inclus</strong><span>${pack.services.length} services</span></div>
-    </div>
-    <div class="detail-list"><ul>${servicesHtml}</ul></div>
-    <div class="detail-actions"><button class="btn btn-primary" type="button" onclick="selectPack(${pack.id}); closeDetailModal();">Choisir ce pack</button></div>
-  `;
-  openDetailModal(html);
+
+  selectedPackId    = id;
+  selectedServiceId = null;
+
+  document.getElementById('selected-pack').value    = id;
+  document.getElementById('selected-service').value = '';
+  document.getElementById('tarif_ht').value = pack.prix_ht || '';
+
+  const box = document.getElementById('pack-box');
+  box.classList.add('active');
+  document.getElementById('pack-label').textContent =
+    `${pack.nom} — ${formatMontant(pack.prix_ht)}`;
+
+  document.getElementById('service-box').classList.remove('active');
+  document.getElementById('service-label').textContent = 'Aucun service sélectionné';
+
+  document.querySelectorAll('[id^="btn-pack-"]').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('[id^="btn-service-"]').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById(`btn-pack-${id}`);
+  if (btn) { btn.classList.add('selected'); btn.innerHTML = '<i class="bi bi-check2-circle"></i> Sélectionné'; }
+
+  showToast(`✓ Pack ${pack.nom} sélectionné`);
+  if (scroll) document.getElementById('souscrire').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function openDetailModal(contentHtml) {
-  document.getElementById('detail-modal-content').innerHTML = contentHtml;
+// ── Modal détail service ──────────────────────────────────────────────────────
+function showServiceDetails(id) {
+  const s = publicServices.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('detail-modal-content').innerHTML = `
+    <div style="margin-bottom:20px;">
+      <span style="font-size:0.72rem; font-weight:700; color:#c9a84c;
+                   text-transform:uppercase; letter-spacing:2px;">${s.categorie}</span>
+      <h2 style="font-size:1.4rem; font-weight:800; color:#0b2545; margin:6px 0;">${s.titre}</h2>
+      <div style="font-size:1.5rem; font-weight:800; color:#0b2545;">${formatMontant(s.prix_ht)}<span style="font-size:0.8rem; font-weight:400; color:#6b7280;"> HT / ${s.duree_mois} mois</span></div>
+    </div>
+    <p style="color:#6b7280; font-size:0.9rem; line-height:1.7; margin-bottom:20px;">
+      ${s.description || 'Service professionnel SUDICONE.'}
+    </p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
+      <div style="background:#f7f8fa; border-radius:8px; padding:12px;">
+        <div style="font-size:0.72rem; color:#6b7280; text-transform:uppercase; letter-spacing:1px;">Durée</div>
+        <div style="font-weight:700; color:#0b2545;">${s.duree_mois} mois</div>
+      </div>
+      <div style="background:#f7f8fa; border-radius:8px; padding:12px;">
+        <div style="font-size:0.72rem; color:#6b7280; text-transform:uppercase; letter-spacing:1px;">Catégorie</div>
+        <div style="font-weight:700; color:#0b2545;">${s.categorie}</div>
+      </div>
+    </div>
+    <button class="btn-submit" onclick="selectService(${s.id}); closeDetailModal();" style="width:100%;">
+      <i class="bi bi-check2-circle"></i> Choisir ce service
+    </button>
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+// ── Modal détail pack ─────────────────────────────────────────────────────────
+function showPackDetails(id) {
+  const p = publicPacks.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('detail-modal-content').innerHTML = `
+    <div style="margin-bottom:20px;">
+      <span style="font-size:0.72rem; font-weight:700; color:#c9a84c;
+                   text-transform:uppercase; letter-spacing:2px;">Pack complet</span>
+      <h2 style="font-size:1.4rem; font-weight:800; color:#0b2545; margin:6px 0;">${p.nom}</h2>
+      <div style="font-size:1.5rem; font-weight:800; color:#0b2545;">${formatMontant(p.prix_ht)}<span style="font-size:0.8rem; font-weight:400; color:#6b7280;"> HT / ${p.duree_mois} mois</span></div>
+    </div>
+    <p style="color:#6b7280; font-size:0.9rem; line-height:1.7; margin-bottom:20px;">
+      ${p.description || 'Pack tout-en-un pour votre communication.'}
+    </p>
+    <div style="margin-bottom:20px;">
+      <div style="font-size:0.78rem; font-weight:700; color:#0b2545; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Services inclus</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        ${p.services.map(s => `
+          <div style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#374151;">
+            <i class="bi bi-check2-circle" style="color:#16a34a;"></i> ${s.titre}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <button class="btn-submit" onclick="selectPack(${p.id}); closeDetailModal();" style="width:100%;">
+      <i class="bi bi-check2-circle"></i> Choisir ce pack
+    </button>
+  `;
   document.getElementById('detail-modal').classList.add('open');
 }
 
@@ -137,42 +235,76 @@ function closeDetailModal() {
   document.getElementById('detail-modal').classList.remove('open');
 }
 
-function showFeedback(elementId, message, type = 'info') {
-  const element = document.getElementById(elementId);
-  element.textContent = message;
-  element.className = `feedback-message ${type}`;
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<i class="bi bi-check2-circle"></i> ${msg}`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
 }
 
+// ── Soumission formulaire ─────────────────────────────────────────────────────
 async function handleSubscription(event) {
   event.preventDefault();
+
+  const serviceId = document.getElementById('selected-service').value;
+  const packId    = document.getElementById('selected-pack').value;
+
+  if (!serviceId && !packId) {
+    showFeedback('Veuillez choisir un service ou un pack avant d\'envoyer.', 'error');
+    document.getElementById('services').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+
   const data = {
-    nom: document.getElementById('nom').value.trim(),
+    nom:        document.getElementById('nom').value.trim(),
     entreprise: document.getElementById('entreprise').value.trim(),
-    email: document.getElementById('email').value.trim(),
-    telephone: document.getElementById('telephone').value.trim(),
-    adresse: '',
-    ville: '',
-    pays: document.getElementById('pays').value.trim(),
-    site_web: document.getElementById('site_web').value.trim(),
-    message: document.getElementById('message').value.trim(),
-    service_id: document.getElementById('selected-service').value || null,
-    pack_id: document.getElementById('selected-pack').value || null,
+    email:      document.getElementById('email').value.trim(),
+    telephone:  document.getElementById('telephone').value.trim(),
+    pays:       document.getElementById('pays').value.trim(),
+    site_web:   document.getElementById('site_web').value.trim(),
+    message:    document.getElementById('message').value.trim(),
+    service_id: serviceId || null,
+    pack_id:    packId    || null,
     date_debut: document.getElementById('date_debut').value || null,
-    date_fin: document.getElementById('date_fin').value || null,
-    tarif_ht: document.getElementById('tarif_ht').value ? Number(document.getElementById('tarif_ht').value) : null,
+    date_fin:   document.getElementById('date_fin').value   || null,
+    tarif_ht:   document.getElementById('tarif_ht').value
+                  ? Number(document.getElementById('tarif_ht').value) : null,
     renouvellement_auto: document.getElementById('renewal').checked,
     mode_paiement: null
   };
 
+  const btn = document.querySelector('.btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Envoi en cours...';
+
   try {
-    const response = await api.post('/api/public/leads', data);
-    showFeedback('subscribe-feedback', response.message || 'Votre demande a bien été envoyée.', 'success');
+    const res = await api.post('/api/public/leads', data);
+    showFeedback(res.message || 'Votre demande a bien été envoyée. Nous vous contactons sous 24h.', 'success');
     document.getElementById('subscribe-form').reset();
-    document.getElementById('tarif_ht').value = '';
-  } catch (error) {
-    showFeedback('subscribe-feedback', error.message || 'Erreur lors de l’envoi. Réessayez.', 'error');
-    console.error(error);
+    selectedServiceId = null;
+    selectedPackId    = null;
+    document.getElementById('service-box').classList.remove('active');
+    document.getElementById('pack-box').classList.remove('active');
+    document.getElementById('service-label').textContent = 'Aucun service sélectionné';
+    document.getElementById('pack-label').textContent    = 'Aucun pack sélectionné';
+    document.querySelectorAll('.btn-choisir').forEach(b => {
+      b.classList.remove('selected');
+      b.innerHTML = '<i class="bi bi-check2"></i> Choisir';
+    });
+  } catch (err) {
+    showFeedback(err.message || 'Erreur lors de l\'envoi. Réessayez.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send-fill"></i> Envoyer ma demande';
   }
+}
+
+function showFeedback(msg, type) {
+  const el = document.getElementById('subscribe-feedback');
+  el.textContent = msg;
+  el.className   = `feedback ${type}`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {

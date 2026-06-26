@@ -20,7 +20,6 @@
 
       <div class="toolbar" style="flex-wrap: wrap; gap: 12px;">
         <button class="btn btn-primary" onclick="document.getElementById('assign-modal').classList.add('open')">+ Assigner service / pack</button>
-        <button class="btn btn-secondary" onclick="loadServices()">Rafraîchir</button>
       </div>
 
       <div class="stats-grid" id="services-grid"></div>
@@ -111,5 +110,16 @@
 
   <script src="/js/common.js"></script>
   <script src="/js/services.js"></script>
+
+  <!-- Modal détail service/pack -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" style="position:relative; max-width:520px;">
+    <button class="modal-close" onclick="fermerDetailModal()">
+      <i class="bi bi-x"></i>
+    </button>
+    <h2 id="detail-titre">Détail</h2>
+    <div id="detail-corps"></div>
+  </div>
+</div>
 </body>
 </html>

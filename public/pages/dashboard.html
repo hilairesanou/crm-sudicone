@@ -25,72 +25,6 @@
 
       <div id="dashboard-error" class="error-msg" style="display:none; margin-bottom:20px;"></div>
 
-      <!-- ═══ PANNEAU ALERTES + SCORING ══════════════════════════════════════ -->
-      <div id="analytics-panel" style="
-        margin-bottom:24px; display:none;
-        background:#fff; border:1px solid #e5e7eb;
-        border-radius:12px; overflow:hidden;
-      ">
-        <div style="
-          display:flex; align-items:center; justify-content:space-between;
-          padding:14px 20px; border-bottom:1px solid #f3f4f6; background:#f9fafb;
-        ">
-          <div style="display:flex; align-items:center; width:100%;">
-            <span style="font-weight:700; font-size:1rem; width:50%;">
-              <i class="bi bi-bell-fill" style="color:#f59e0b;"></i>
-              Alertes
-              <span id="alertes-badge" style="
-                background:#ef4444; color:#fff; border-radius:999px;
-                padding:2px 8px; font-size:0.75rem; font-weight:600; margin-left:6px;
-              "></span>
-            </span>
-            <span style="font-weight:700; font-size:1rem; width:50%;">
-              <i class="bi bi-graph-up-arrow" style="color:#3b82f6;"></i>
-              Opportunités prioritaires
-              <span style="color:#9ca3af; font-size:0.8rem; font-weight:400;">— scoring auto</span>
-            </span>
-          </div>
-          <button onclick="document.getElementById('analytics-panel').style.display='none'" style="
-            background:none; border:none; color:#9ca3af;
-            cursor:pointer; font-size:0.85rem; flex-shrink:0;
-          "><i class="bi bi-x-lg"></i></button>
-        </div>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0;">
-          <!-- Alertes -->
-          <div style="border-right:1px solid #f3f4f6; padding:16px;">
-            <div id="alertes-liste" style="display:flex; flex-direction:column; gap:8px;"></div>
-            <div id="alertes-more" style="display:none; margin-top:8px;">
-              <div id="alertes-extra" style="display:none; flex-direction:column; gap:8px;"></div>
-              <button onclick="toggleAlertes()" id="btn-alertes" style="
-                margin-top:8px; width:100%; padding:7px; border:1px solid #e5e7eb;
-                border-radius:8px; background:#f9fafb; cursor:pointer;
-                color:#6b7280; font-size:0.83rem;
-              ">
-                <i class="bi bi-chevron-down"></i>
-                <span id="btn-alertes-label">Voir toutes les alertes</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Scoring -->
-          <div style="padding:16px;">
-            <div id="scoring-liste" style="display:flex; flex-direction:column; gap:8px;"></div>
-            <div id="scoring-more" style="display:none; margin-top:8px;">
-              <div id="scoring-extra" style="display:none; flex-direction:column; gap:8px;"></div>
-              <button onclick="toggleScoring()" id="btn-scoring" style="
-                margin-top:8px; width:100%; padding:7px; border:1px solid #e5e7eb;
-                border-radius:8px; background:#f9fafb; cursor:pointer;
-                color:#6b7280; font-size:0.83rem;
-              ">
-                <i class="bi bi-chevron-down"></i>
-                <span id="btn-scoring-label">Voir toutes les opportunités</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- ═══ STATS CARDS ═════════════════════════════════════════════════════ -->
       <div class="stats-grid" id="stats-grid"></div>
 
@@ -104,8 +38,81 @@
       </div>
       <div class="pipeline-summary" id="pipeline-summary"></div>
 
+      <!-- ═══ PANNEAU ALERTES + SCORING ══════════════════════════════════════ -->
+      <div id="analytics-panel" style="display:none; margin-top:24px;">
+        <div style="margin-bottom:8px;">
+          <span style="font-size:0.75rem; font-weight:800; color:var(--bleu);
+            text-transform:uppercase; letter-spacing:1.5px;
+            border-bottom:2px solid var(--bleu); padding-bottom:4px;">
+            <i class="bi bi-bell-fill" style="color:#f59e0b;"></i>
+            Alertes
+            <span id="alertes-badge" style="
+              background:#ef4444; color:#fff; border-radius:999px;
+              padding:2px 8px; font-size:0.72rem; font-weight:700; margin-left:6px;
+            "></span>
+          </span>
+        </div>
+
+        <div style="
+          background:#fff; border:1px solid #e5e7eb;
+          border-radius:12px; overflow:hidden; margin-bottom:24px;
+        ">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0;">
+            <!-- Alertes -->
+            <div style="border-right:1px solid #f3f4f6; padding:16px;">
+              <div style="font-size:0.8rem; font-weight:700; color:var(--bleu);
+                          margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">
+                <i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b;"></i>
+                Alertes actives
+              </div>
+              <div id="alertes-liste" style="display:flex; flex-direction:column; gap:8px;"></div>
+              <div id="alertes-more" style="display:none; margin-top:8px;">
+                <div id="alertes-extra" style="display:none; flex-direction:column; gap:8px;"></div>
+                <button onclick="toggleAlertes()" id="btn-alertes" style="
+                  margin-top:8px; width:100%; padding:7px; border:1px solid #e5e7eb;
+                  border-radius:8px; background:#f9fafb; cursor:pointer;
+                  color:#6b7280; font-size:0.83rem;
+                ">
+                  <i class="bi bi-chevron-down"></i>
+                  <span id="btn-alertes-label">Voir toutes les alertes</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Scoring -->
+            <div style="padding:16px;">
+              <div style="font-size:0.8rem; font-weight:700; color:var(--bleu);
+                          margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">
+                <i class="bi bi-graph-up-arrow" style="color:#3b82f6;"></i>
+                Opportunités prioritaires
+              </div>
+              <div id="scoring-liste" style="display:flex; flex-direction:column; gap:8px;"></div>
+              <div id="scoring-more" style="display:none; margin-top:8px;">
+                <div id="scoring-extra" style="display:none; flex-direction:column; gap:8px;"></div>
+                <button onclick="toggleScoring()" id="btn-scoring" style="
+                  margin-top:8px; width:100%; padding:7px; border:1px solid #e5e7eb;
+                  border-radius:8px; background:#f9fafb; cursor:pointer;
+                  color:#6b7280; font-size:0.83rem;
+                ">
+                  <i class="bi bi-chevron-down"></i>
+                  <span id="btn-scoring-label">Voir toutes les opportunités</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ═══ GRAPHIQUES ═══════════════════════════════════════════════════════ -->
-      <div class="charts-grid" style="margin-top:24px;">
+      <div style="margin-bottom:8px;">
+        <span style="font-size:0.75rem; font-weight:800; color:var(--bleu);
+          text-transform:uppercase; letter-spacing:1.5px;
+          border-bottom:2px solid var(--bleu); padding-bottom:4px;">
+          Graphiques
+        </span>
+      </div>
+
+      <div class="charts-grid">
         <div class="chart-card">
           <h3>Évolution du chiffre d'affaires (12 derniers mois)</h3>
           <canvas id="chart-ca"></canvas>
@@ -157,12 +164,10 @@
   <script src="/js/common.js"></script>
   <script>
 
-  // ── Date du jour ────────────────────────────────────────────────────────────
   document.getElementById('date-du-jour').textContent = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   });
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
   function couleurNiveau(niveau) {
     return { critique: '#ef4444', warning: '#f59e0b', info: '#3b82f6' }[niveau] || '#6b7280';
   }
@@ -180,7 +185,6 @@
     return '#ef4444';
   }
 
-  // ── Rendu alerte ────────────────────────────────────────────────────────────
   function renderAlerte(a) {
     return `
       <div style="
@@ -205,7 +209,6 @@
       </div>`;
   }
 
-  // ── Rendu scoring ────────────────────────────────────────────────────────────
   function renderScore(o) {
     return `
       <div style="
@@ -234,7 +237,7 @@
         </div>
         <span style="
           padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:600;
-          background:${couleurScore(o.score)}20; color:${couleurScore(o.score)};
+          background:${couleurScore(o.score)}15; color:${couleurScore(o.score)};
           white-space:nowrap; flex-shrink:0;
         ">
           ${o.priorite === 'haute' ? '🔥 Haute' : o.priorite === 'moyenne' ? '⚡ Moyenne' : '❄️ Faible'}
@@ -242,7 +245,6 @@
       </div>`;
   }
 
-  // ── Toggle alertes ───────────────────────────────────────────────────────────
   let alertesOuvertes = false;
   function toggleAlertes() {
     alertesOuvertes = !alertesOuvertes;
@@ -251,7 +253,6 @@
     document.getElementById('btn-alertes').querySelector('i').className = alertesOuvertes ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
   }
 
-  // ── Toggle scoring ───────────────────────────────────────────────────────────
   let scoringOuvert = false;
   function toggleScoring() {
     scoringOuvert = !scoringOuvert;
@@ -260,17 +261,19 @@
     document.getElementById('btn-scoring').querySelector('i').className = scoringOuvert ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
   }
 
-  // ── Alertes ──────────────────────────────────────────────────────────────────
   async function loadAlertes() {
     try {
       const data = await api.get('/api/analytics/alertes');
       if (!data.total) return;
+
       document.getElementById('analytics-panel').style.display = 'block';
       document.getElementById('alertes-badge').textContent =
         `${data.critique} critique(s) · ${data.warning} warning(s)`;
+
       const top5  = data.alertes.slice(0, 5);
       const reste = data.alertes.slice(5);
       document.getElementById('alertes-liste').innerHTML = top5.map(renderAlerte).join('');
+
       if (reste.length) {
         document.getElementById('alertes-more').style.display = 'block';
         document.getElementById('alertes-extra').innerHTML = reste.map(renderAlerte).join('');
@@ -279,7 +282,6 @@
     } catch(e) { console.error(e); }
   }
 
-  // ── Scoring ──────────────────────────────────────────────────────────────────
   async function loadScoring() {
     try {
       const data = await api.get('/api/analytics/scoring');
@@ -296,14 +298,12 @@
     } catch(e) { console.error(e); }
   }
 
-  // ── Dashboard ────────────────────────────────────────────────────────────────
   async function loadDashboard() {
     await initSidebar('dashboard');
     await Promise.all([loadAlertes(), loadScoring()]);
 
     const stats = await api.get('/api/stats/dashboard');
 
-    // Stats cards — 4 essentielles
     document.getElementById('stats-grid').innerHTML = `
       <div class="stat-card">
         <div class="label">Contacts totaux</div>
@@ -327,7 +327,6 @@
       </div>
     `;
 
-    // Pipeline summary
     const pipelineData = await api.get('/api/stats/pipeline-par-etape');
     const labelsEtapes = {
       nouveau: 'Nouveau', qualification: 'Qualification',
@@ -342,7 +341,6 @@
       </div>
     `).join('');
 
-    // Chart CA mensuel
     const caData = await api.get('/api/stats/ca-mensuel');
     new Chart(document.getElementById('chart-ca'), {
       type: 'line',
@@ -364,7 +362,6 @@
       }
     });
 
-    // Chart Pipeline
     new Chart(document.getElementById('chart-pipeline'), {
       type: 'doughnut',
       data: {
@@ -377,7 +374,6 @@
       }
     });
 
-    // Chart Contacts
     const contactsData = await api.get('/api/stats/contacts-par-type');
     const labelsType = { prospect: 'Prospects', client: 'Clients', partenaire: 'Partenaires' };
     new Chart(document.getElementById('chart-contacts'), {
@@ -392,7 +388,6 @@
       }
     });
 
-    // Chart Factures
     const facturesData = await api.get('/api/stats/factures-par-statut');
     const statutLabels = {
       brouillon: 'Brouillon', envoye: 'Envoyé',
@@ -421,6 +416,15 @@
       console.error(err);
     }
   })();
+  // Dans le script du dashboard, ajoute au début de loadDashboard()
+const params = new URLSearchParams(window.location.search);
+   if (params.get('acces') === 'refuse') {
+    const errorBox = document.getElementById('dashboard-error');
+    errorBox.textContent = 'Accès refusé — Le module Analytique est réservé aux managers et administrateurs.';
+    errorBox.style.display = 'block';
+    // Effacer le paramètre de l'URL
+    window.history.replaceState({}, '', '/dashboard');
+  }
   </script>
 </body>
 </html>

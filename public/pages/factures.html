@@ -6,18 +6,46 @@
   <title>Factures & Devis — CRM</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    /* Recherche contact */
+    .contact-search-wrap { position: relative; }
+    .contact-search-input {
+      width: 100%; padding: 8px 12px;
+      border: 1.5px solid var(--bordure); border-radius: 8px;
+      font-size: 0.88rem; font-family: inherit;
+    }
+    .contact-search-input:focus { outline: none; border-color: var(--bleu2); }
+    .contact-dropdown {
+      display: none; position: absolute; top: 100%; left: 0; right: 0;
+      background: white; border: 1px solid var(--bordure);
+      border-radius: 8px; max-height: 200px; overflow-y: auto;
+      z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-top: 4px;
+    }
+    .contact-dropdown.open { display: block; }
+    .contact-option {
+      padding: 8px 12px; cursor: pointer; font-size: 0.85rem;
+      border-bottom: 1px solid var(--bordure);
+      transition: background 0.1s;
+    }
+    .contact-option:last-child { border-bottom: none; }
+    .contact-option:hover { background: var(--gris-clair); }
+    .contact-option .nom { font-weight: 600; color: var(--bleu); }
+    .contact-option .entreprise { font-size: 0.75rem; color: var(--gris); }
+  </style>
 </head>
 <body>
   <div class="app-layout">
     <div id="sidebar-mount"></div>
-
     <div class="main-content">
       <div class="page-header">
         <div>
           <h1>Factures & Devis</h1>
           <p>Suivi de la facturation</p>
         </div>
-        <button class="btn btn-primary" onclick="openModal()">+ Nouveau document</button>
+        <button class="btn btn-primary" onclick="openModal()">
+          <i class="bi bi-plus-lg"></i> Nouveau document
+        </button>
       </div>
 
       <div class="toolbar">
@@ -52,17 +80,22 @@
           <tbody id="factures-tbody"></tbody>
         </table>
         <div class="empty-state" id="empty-state" style="display:none">
-          <p>Aucun document. Cliquez sur "Nouveau document" pour créer un devis ou une facture.</p>
+          <i class="bi bi-file-earmark-text"></i>
+          <p>Aucun document. Cliquez sur "Nouveau document" pour commencer.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Création -->
+  <!-- ═══ MODAL CRÉATION / ÉDITION ═══════════════════════════════════════ -->
   <div class="modal-overlay" id="modal-overlay">
-    <div class="modal" style="width:600px">
-      <h2>Nouveau document</h2>
+    <div class="modal" style="position:relative; max-width:640px;">
+      <button class="modal-close" onclick="closeModal()"><i class="bi bi-x"></i></button>
+      <h2 id="modal-titre">Nouveau document</h2>
+
       <form id="facture-form">
+        <input type="hidden" id="facture-id">
+
         <div class="form-row">
           <div class="form-group">
             <label>Type</label>
@@ -72,33 +105,84 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Contact</label>
-            <select id="contact_id"><option value="">— Aucun —</option></select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
             <label>Taux TVA (%)</label>
             <input type="number" id="taux_tva" value="18" step="0.01">
           </div>
-          <div class="form-group">
-            <label>Date d'échéance</label>
-            <input type="date" id="date_echeance">
+        </div>
+
+        <!-- Recherche contact -->
+        <div class="form-group">
+          <label>Contact</label>
+          <input type="hidden" id="contact_id">
+          <div class="contact-search-wrap">
+            <input type="text" id="contact-search" class="contact-search-input"
+              placeholder="Rechercher un contact..." autocomplete="off"
+              oninput="filtrerContacts(this.value)"
+              onfocus="ouvrirDropdown()"
+              onblur="setTimeout(fermerDropdown, 200)">
+            <div class="contact-dropdown" id="contact-dropdown"></div>
+          </div>
+          <div id="contact-selectionne" style="display:none; margin-top:6px;
+            background:var(--bleu-bg); border-radius:6px; padding:6px 10px;
+            font-size:0.82rem; color:var(--bleu); font-weight:600;
+            display:none; align-items:center; justify-content:space-between;">
+            <span id="contact-selectionne-nom"></span>
+            <button type="button" onclick="clearContact()" style="
+              background:none; border:none; color:var(--gris);
+              cursor:pointer; font-size:0.85rem;">✕</button>
           </div>
         </div>
 
-        <label style="font-size:12.5px;font-weight:600;display:block;margin:14px 0 8px">Lignes</label>
-        <div id="lignes-container"></div>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="addLigne()">+ Ajouter une ligne</button>
+        <div class="form-group">
+          <label>Date d'échéance</label>
+          <input type="date" id="date_echeance">
+        </div>
 
-        <div style="text-align:right;margin-top:14px;font-size:14px">
-          <div>Total HT : <strong id="total-ht">0 XOF</strong></div>
-          <div>Total TTC : <strong id="total-ttc">0 XOF</strong></div>
+        <!-- Lignes -->
+        <div style="margin: 14px 0 8px; display:flex; align-items:center; justify-content:space-between;">
+          <label style="font-size:0.82rem; font-weight:700; color:var(--bleu);
+            text-transform:uppercase; letter-spacing:0.5px; margin:0;">
+            Lignes de facturation
+          </label>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addLigne()">
+            <i class="bi bi-plus"></i> Ajouter une ligne
+          </button>
+        </div>
+
+        <!-- En-tête colonnes lignes -->
+        <div style="display:grid; grid-template-columns:2fr 70px 120px 40px;
+          gap:6px; padding:6px 8px; background:var(--bleu); border-radius:6px;
+          margin-bottom:6px;">
+          <span style="font-size:0.72rem; font-weight:700; color:white; text-transform:uppercase;">Désignation</span>
+          <span style="font-size:0.72rem; font-weight:700; color:white; text-transform:uppercase; text-align:center;">Qté</span>
+          <span style="font-size:0.72rem; font-weight:700; color:white; text-transform:uppercase; text-align:right;">Prix unit. (XOF)</span>
+          <span></span>
+        </div>
+
+        <div id="lignes-container"></div>
+
+        <!-- Totaux -->
+        <div style="background:var(--gris-clair); border-radius:8px; padding:12px 14px;
+          margin-top:12px; display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+          <div style="font-size:0.85rem; color:var(--gris);">
+            Total HT : <strong id="total-ht" style="color:var(--bleu);">0 XOF</strong>
+          </div>
+          <div style="font-size:0.85rem; color:var(--gris);">
+            TVA : <strong id="total-tva" style="color:var(--bleu);">0 XOF</strong>
+          </div>
+          <div style="font-size:1rem; font-weight:800; color:var(--bleu);">
+            Total TTC : <span id="total-ttc">0 XOF</span>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <label>Notes (optionnel)</label>
+          <textarea id="notes" rows="2" placeholder="Notes internes ou conditions de paiement..."></textarea>
         </div>
 
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-          <button type="submit" class="btn btn-primary">Créer</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit">Créer</button>
         </div>
       </form>
     </div>
@@ -106,120 +190,219 @@
 
   <script src="/js/common.js"></script>
   <script>
-    let factures = [];
-    let contacts = [];
+    let factures  = [];
+    let contacts  = [];
     let ligneCount = 0;
+    let contactSelectionneId = null;
 
+    // ── Init ──────────────────────────────────────────────────────────────
     async function loadFactures() {
       await initSidebar('factures');
       contacts = await api.get('/api/contacts');
-      document.getElementById('contact_id').innerHTML += contacts.map(c => `<option value="${c.id}">${c.nom}${c.entreprise ? ' — ' + c.entreprise : ''}</option>`).join('');
-
       await refreshFactures();
       document.getElementById('filter-type').addEventListener('change', refreshFactures);
       document.getElementById('filter-statut').addEventListener('change', refreshFactures);
       document.getElementById('facture-form').addEventListener('submit', saveFacture);
-
-      addLigne(); // une ligne par défaut
     }
 
     async function refreshFactures() {
       const params = new URLSearchParams();
-      const type = document.getElementById('filter-type').value;
+      const type   = document.getElementById('filter-type').value;
       const statut = document.getElementById('filter-statut').value;
-      if (type) params.set('type', type);
+      if (type)   params.set('type', type);
       if (statut) params.set('statut', statut);
-
       factures = await api.get('/api/factures?' + params.toString());
       renderFactures();
     }
 
     function renderFactures() {
-      const tbody = document.getElementById('factures-tbody');
+      const tbody      = document.getElementById('factures-tbody');
       const emptyState = document.getElementById('empty-state');
-
-      if (factures.length === 0) {
+      if (!factures.length) {
         tbody.innerHTML = '';
         emptyState.style.display = 'block';
         return;
       }
       emptyState.style.display = 'none';
 
+      const statutClass = {
+        brouillon: 'badge-annule', envoye: 'badge-prospect',
+        paye: 'badge-client', en_retard: 'badge-en_retard', annule: 'badge-annule'
+      };
+      const statutLabel = {
+        brouillon: 'Brouillon', envoye: 'Envoyé',
+        paye: 'Payé', en_retard: 'En retard', annule: 'Annulé'
+      };
+
       tbody.innerHTML = factures.map(f => `
         <tr>
           <td><strong>${f.numero}</strong></td>
           <td>${f.type === 'facture' ? 'Facture' : 'Devis'}</td>
           <td>${f.contact_nom || '—'}</td>
-          <td>${formatMontant(f.montant_ttc)}</td>
+          <td><strong>${formatMontant(f.montant_ttc)}</strong></td>
           <td>
-            <select onchange="changeStatut(${f.id}, this.value)" onclick="event.stopPropagation()" style="border:none;background:transparent;font-size:11px;font-weight:600;">
-              ${['brouillon','envoye','paye','en_retard','annule'].map(s => `<option value="${s}" ${f.statut === s ? 'selected' : ''}>${s.replace('_',' ')}</option>`).join('')}
+            <select onchange="changeStatut(${f.id}, this.value)"
+              onclick="event.stopPropagation()"
+              style="border:none; background:transparent; font-size:0.8rem; font-weight:600; cursor:pointer;">
+              ${['brouillon','envoye','paye','en_retard','annule'].map(s =>
+                `<option value="${s}" ${f.statut === s ? 'selected' : ''}>${statutLabel[s]}</option>`
+              ).join('')}
             </select>
           </td>
           <td>${formatDate(f.date_echeance)}</td>
-          <td style="display:flex;gap:6px;justify-content:flex-end">
-            <button class="btn btn-secondary btn-sm" onclick="openPdf(${f.id})" title="Imprimer en PDF"><i class="bi bi-printer"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteFacture(${f.id})">Suppr.</button>
+          <td style="display:flex; gap:6px; justify-content:flex-end;">
+            <button class="btn btn-secondary btn-sm" onclick="editFacture(${f.id})" title="Modifier">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="openPdf(${f.id})" title="PDF">
+              <i class="bi bi-printer"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteFacture(${f.id})" title="Supprimer">
+              <i class="bi bi-trash"></i>
+            </button>
           </td>
         </tr>
       `).join('');
     }
 
-    async function changeStatut(id, statut) {
-      await api.put(`/api/factures/${id}/statut`, { statut });
-      await refreshFactures();
+    // ── Recherche contact ─────────────────────────────────────────────────
+    function filtrerContacts(query) {
+      const dropdown = document.getElementById('contact-dropdown');
+      const q = query.toLowerCase().trim();
+      const filtres = q
+        ? contacts.filter(c =>
+            c.nom.toLowerCase().includes(q) ||
+            (c.entreprise || '').toLowerCase().includes(q) ||
+            (c.email || '').toLowerCase().includes(q)
+          )
+        : contacts;
+
+      dropdown.innerHTML = filtres.slice(0, 10).map(c => `
+        <div class="contact-option" onmousedown="selectionnerContact(${c.id}, '${c.nom.replace(/'/g, "\\'")}', '${(c.entreprise || '').replace(/'/g, "\\'")}')">
+          <div class="nom">${c.nom}</div>
+          ${c.entreprise ? `<div class="entreprise">${c.entreprise}</div>` : ''}
+        </div>
+      `).join('') || '<div class="contact-option" style="color:var(--gris);">Aucun résultat</div>';
+
+      dropdown.classList.add('open');
     }
 
-    function addLigne() {
+    function ouvrirDropdown() {
+      filtrerContacts(document.getElementById('contact-search').value);
+    }
+
+    function fermerDropdown() {
+      document.getElementById('contact-dropdown').classList.remove('open');
+    }
+
+    function selectionnerContact(id, nom, entreprise) {
+      contactSelectionneId = id;
+      document.getElementById('contact_id').value = id;
+      document.getElementById('contact-search').value = '';
+
+      const el = document.getElementById('contact-selectionne');
+      document.getElementById('contact-selectionne-nom').textContent =
+        nom + (entreprise ? ` — ${entreprise}` : '');
+      el.style.display = 'flex';
+      fermerDropdown();
+    }
+
+    function clearContact() {
+      contactSelectionneId = null;
+      document.getElementById('contact_id').value = '';
+      document.getElementById('contact-search').value = '';
+      document.getElementById('contact-selectionne').style.display = 'none';
+    }
+
+    // ── Lignes ────────────────────────────────────────────────────────────
+    function addLigne(designation = '', quantite = 1, prix = '') {
       ligneCount++;
       const id = 'ligne-' + ligneCount;
       const container = document.getElementById('lignes-container');
       const div = document.createElement('div');
-      div.className = 'form-row';
       div.id = id;
-      div.style.marginBottom = '8px';
+      div.style.cssText = 'display:grid; grid-template-columns:2fr 70px 120px 40px; gap:6px; margin-bottom:6px;';
       div.innerHTML = `
-        <div class="form-group" style="grid-column: span 2">
-          <input type="text" placeholder="Désignation" class="ligne-designation" oninput="recalculer()">
-        </div>
-        <div class="form-group">
-          <input type="number" placeholder="Qté" value="1" class="ligne-qte" oninput="recalculer()">
-        </div>
-        <div class="form-group" style="display:flex; gap:6px;">
-          <input type="number" placeholder="Prix unit." class="ligne-prix" oninput="recalculer()">
-          <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove(); recalculer();">✕</button>
-        </div>
+        <input type="text" placeholder="Désignation" class="ligne-designation"
+          value="${designation}"
+          style="padding:7px 10px; border:1.5px solid var(--bordure); border-radius:6px; font-size:0.85rem;"
+          oninput="recalculer()">
+        <input type="number" placeholder="1" value="${quantite}" class="ligne-qte" min="1"
+          style="padding:7px 8px; border:1.5px solid var(--bordure); border-radius:6px; font-size:0.85rem; text-align:center;"
+          oninput="recalculer()">
+        <input type="number" placeholder="0" value="${prix}" class="ligne-prix" min="0"
+          style="padding:7px 8px; border:1.5px solid var(--bordure); border-radius:6px; font-size:0.85rem; text-align:right;"
+          oninput="recalculer()">
+        <button type="button" onclick="document.getElementById('${id}').remove(); recalculer();"
+          style="padding:7px; border:1.5px solid #fca5a5; border-radius:6px; background:#fff5f5;
+          color:#dc2626; cursor:pointer; font-size:0.85rem;">✕</button>
       `;
-      div.style.gridTemplateColumns = '2fr 1fr 1.3fr';
-      div.style.display = 'grid';
-      div.style.gap = '8px';
       container.appendChild(div);
+      recalculer();
     }
 
     function recalculer() {
-      const designations = document.querySelectorAll('.ligne-designation');
-      let totalHT = 0;
-      designations.forEach((d, i) => {
-        const qte = parseFloat(document.querySelectorAll('.ligne-qte')[i].value) || 0;
-        const prix = parseFloat(document.querySelectorAll('.ligne-prix')[i].value) || 0;
-        totalHT += qte * prix;
+      const desigs = document.querySelectorAll('.ligne-designation');
+      const qtes   = document.querySelectorAll('.ligne-qte');
+      const prix   = document.querySelectorAll('.ligne-prix');
+      let totalHT  = 0;
+      desigs.forEach((_, i) => {
+        const q = parseFloat(qtes[i].value) || 0;
+        const p = parseFloat(prix[i].value)  || 0;
+        totalHT += q * p;
       });
-      const tva = parseFloat(document.getElementById('taux_tva').value) || 0;
-      const totalTTC = totalHT * (1 + tva / 100);
-      document.getElementById('total-ht').textContent = formatMontant(totalHT);
+      const tva      = parseFloat(document.getElementById('taux_tva').value) || 0;
+      const montantTva = totalHT * (tva / 100);
+      const totalTTC = totalHT + montantTva;
+      document.getElementById('total-ht').textContent  = formatMontant(totalHT);
+      document.getElementById('total-tva').textContent = formatMontant(montantTva);
       document.getElementById('total-ttc').textContent = formatMontant(totalTTC);
     }
 
-    document.addEventListener('input', (e) => {
+    document.addEventListener('input', e => {
       if (e.target.id === 'taux_tva') recalculer();
     });
 
+    // ── Modal création ────────────────────────────────────────────────────
     function openModal() {
+      document.getElementById('modal-titre').textContent = 'Nouveau document';
+      document.getElementById('btn-submit').textContent  = 'Créer';
       document.getElementById('facture-form').reset();
+      document.getElementById('facture-id').value = '';
+      document.getElementById('lignes-container').innerHTML = '';
+      document.getElementById('taux_tva').value = 18;
+      ligneCount = 0;
+      clearContact();
+      addLigne();
+      document.getElementById('modal-overlay').classList.add('open');
+    }
+
+    // ── Édition ───────────────────────────────────────────────────────────
+    async function editFacture(id) {
+      const f = await api.get('/api/factures/' + id);
+      document.getElementById('modal-titre').textContent = `Modifier ${f.type === 'facture' ? 'la facture' : 'le devis'} ${f.numero}`;
+      document.getElementById('btn-submit').textContent  = 'Enregistrer';
+      document.getElementById('facture-id').value        = f.id;
+      document.getElementById('type').value              = f.type;
+      document.getElementById('taux_tva').value          = f.taux_tva || 18;
+      document.getElementById('date_echeance').value     = f.date_echeance || '';
+      document.getElementById('notes').value             = f.notes || '';
+
+      // Contact
+      clearContact();
+      if (f.contact_id) {
+        selectionnerContact(
+          f.contact_id,
+          f.contact_nom || '',
+          f.contact_entreprise || ''
+        );
+      }
+
+      // Lignes
       document.getElementById('lignes-container').innerHTML = '';
       ligneCount = 0;
-      addLigne();
-      document.getElementById('taux_tva').value = 18;
+      (f.lignes || []).forEach(l => addLigne(l.designation, l.quantite, l.prix_unitaire));
+
       document.getElementById('modal-overlay').classList.add('open');
     }
 
@@ -227,34 +410,44 @@
       document.getElementById('modal-overlay').classList.remove('open');
     }
 
+    // ── Sauvegarde ────────────────────────────────────────────────────────
     async function saveFacture(e) {
       e.preventDefault();
-      const designations = document.querySelectorAll('.ligne-designation');
+      const id     = document.getElementById('facture-id').value;
+      const desigs = document.querySelectorAll('.ligne-designation');
+      const qtes   = document.querySelectorAll('.ligne-qte');
+      const prix   = document.querySelectorAll('.ligne-prix');
       const lignes = [];
-      designations.forEach((d, i) => {
-        if (!d.value) return;
+
+      desigs.forEach((d, i) => {
+        if (!d.value.trim()) return;
         lignes.push({
-          designation: d.value,
-          quantite: parseFloat(document.querySelectorAll('.ligne-qte')[i].value) || 1,
-          prix_unitaire: parseFloat(document.querySelectorAll('.ligne-prix')[i].value) || 0
+          designation:   d.value.trim(),
+          quantite:      parseFloat(qtes[i].value) || 1,
+          prix_unitaire: parseFloat(prix[i].value)  || 0
         });
       });
 
-      if (lignes.length === 0) {
+      if (!lignes.length) {
         alert('Ajoutez au moins une ligne avec une désignation.');
         return;
       }
 
       const payload = {
-        type: document.getElementById('type').value,
-        contact_id: document.getElementById('contact_id').value || null,
-        taux_tva: parseFloat(document.getElementById('taux_tva').value) || 18,
+        type:          document.getElementById('type').value,
+        contact_id:    document.getElementById('contact_id').value || null,
+        taux_tva:      parseFloat(document.getElementById('taux_tva').value) || 18,
         date_echeance: document.getElementById('date_echeance').value || null,
+        notes:         document.getElementById('notes').value || null,
         lignes
       };
 
       try {
-        await api.post('/api/factures', payload);
+        if (id) {
+          await api.put('/api/factures/' + id, payload);
+        } else {
+          await api.post('/api/factures', payload);
+        }
         closeModal();
         await refreshFactures();
       } catch (err) {
@@ -262,15 +455,19 @@
       }
     }
 
+    async function changeStatut(id, statut) {
+      await api.put(`/api/factures/${id}/statut`, { statut });
+      await refreshFactures();
+    }
+
     async function deleteFacture(id) {
-      if (!confirm('Supprimer ce document ?')) return;
+      if (!confirm('Supprimer ce document ? Cette action est irréversible.')) return;
       await api.delete('/api/factures/' + id);
       await refreshFactures();
     }
 
     function openPdf(id) {
-      const url = `/api/factures/${id}/pdf`;
-      window.open(url, '_blank');
+      window.open(`/api/factures/${id}/pdf`, '_blank');
     }
 
     loadFactures();

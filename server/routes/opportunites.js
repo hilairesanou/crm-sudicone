@@ -2,6 +2,7 @@
 const express = require('express');
 const db = require('../db/connection');
 const { logActivite } = require('../utils/activite');
+const { regle_opportuniteGagnee } = require('../utils/automations');
 
 const router = express.Router();
 
@@ -52,7 +53,7 @@ router.get('/:id', (req, res) => {
 // POST /api/opportunites
 router.post('/', (req, res) => {
   const {
-    titre, contact_id, montant, devise, etape,
+    titre, contact_id, montant, etape,
     probabilite, date_cloture_prevue, notes
   } = req.body;
 
@@ -63,9 +64,11 @@ router.post('/', (req, res) => {
       probabilite, date_cloture_prevue, notes, owner_id)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    titre, contact_id || null, montant || 0, devise || 'XOF',
-    etape || 'nouveau', probabilite || 10, date_cloture_prevue || null,
-    notes || null, req.session.userId
+    titre, contact_id || null, montant || 0,
+    'XOF', // ← forcé XOF
+    etape || 'nouveau', probabilite || 10,
+    date_cloture_prevue || null, notes || null,
+    req.session.userId
   );
 
   logActivite(
@@ -91,32 +94,33 @@ router.put('/:id', (req, res) => {
   }
 
   const {
-    titre, contact_id, montant, devise, etape,
+    titre, contact_id, montant, etape,
     probabilite, date_cloture_prevue, notes
   } = req.body;
 
   db.prepare(`
     UPDATE opportunites SET
-      titre = ?, contact_id = ?, montant = ?, devise = ?, etape = ?,
+      titre = ?, contact_id = ?, montant = ?, devise = 'XOF', etape = ?,
       probabilite = ?, date_cloture_prevue = ?, notes = ?,
       updated_at = datetime('now')
     WHERE id = ?
   `).run(
-    titre ?? existing.titre, contact_id ?? existing.contact_id,
-    montant ?? existing.montant, devise ?? existing.devise,
-    etape ?? existing.etape, probabilite ?? existing.probabilite,
+    titre ?? existing.titre,
+    contact_id ?? existing.contact_id,
+    montant ?? existing.montant,
+    etape ?? existing.etape,
+    probabilite ?? existing.probabilite,
     date_cloture_prevue ?? existing.date_cloture_prevue,
-    notes ?? existing.notes, req.params.id
+    notes ?? existing.notes,
+    req.params.id
   );
 
-const { regle_opportuniteGagnee } = require('../utils/automations');
+  // Automatisation si étape changée
+  if (etape && etape !== existing.etape) {
+    regle_opportuniteGagnee(parseInt(req.params.id));
+  }
 
-// Après le UPDATE...
-if (etape && etape !== existing.etape) {
-  regle_opportuniteGagnee(parseInt(req.params.id));
-}
-
-  // ── Logs selon ce qui a changé ────────────────────────────────────
+  // Logs selon ce qui a changé
   if (etape && etape !== existing.etape) {
     const etapeLabel = {
       nouveau: 'Nouveau', qualification: 'Qualification',

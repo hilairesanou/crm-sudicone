@@ -77,5 +77,16 @@
 
   <script src="/js/common.js"></script>
   <script src="/js/workflows.js"></script>
+
+  <!-- Modal détail workflow -->
+<div class="modal-overlay" id="detail-workflow-modal">
+  <div class="modal" style="position:relative; max-width:560px; max-height:85vh; overflow-y:auto;">
+    <button class="modal-close" onclick="fermerDetailWorkflow()">
+      <i class="bi bi-x"></i>
+    </button>
+    <h2 id="detail-workflow-titre">Workflow</h2>
+    <div id="detail-workflow-corps"></div>
+  </div>
+</div>
 </body>
 </html>

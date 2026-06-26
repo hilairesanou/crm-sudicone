@@ -13,7 +13,7 @@
       <h1>CRM SUDICONE</h1>
       <p class="sous-titre">Connectez-vous pour accéder à votre espace</p>
 
-      <div class="error-msg" id="error-msg"></div>
+      <div class="error-msg" id="error-msg" style="display:none;"></div>
 
       <form id="login-form">
         <div class="form-group">
@@ -32,10 +32,11 @@
   <script>
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value;
+      const email    = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const errorBox = document.getElementById('error-msg');
-      errorBox.classList.remove('show');
+
+      errorBox.style.display = 'none';
 
       try {
         const res = await fetch('/api/auth/login', {
@@ -47,8 +48,8 @@
         if (!res.ok) throw new Error(data.error || 'Erreur de connexion');
         window.location.href = '/dashboard';
       } catch (err) {
-        errorBox.textContent = err.message;
-        errorBox.classList.add('show');
+        errorBox.textContent    = err.message;
+        errorBox.style.display  = 'block';
       }
     });
   </script>

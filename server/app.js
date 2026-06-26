@@ -70,6 +70,12 @@ app.use('/api/auth',   authRoutes);
 app.use('/api/public', publicRoutes);
 
 // ── Routes API protégées ─────────────────────────────────────────────────────
+app.get('/analytique', requireAuth, (req, res) => {
+  if (req.session.role === 'commercial') {
+    return res.redirect('/dashboard?acces=refuse');
+  }
+  res.sendFile(path.join(__dirname, '../public/pages/analytique.html'));
+});
 app.use('/api/contacts',      requireAuth, contactsRoutes);
 app.use('/api/opportunites',  requireAuth, opportunitesRoutes);
 app.use('/api/factures',      requireAuth, facturesRoutes);
@@ -80,7 +86,6 @@ app.use('/api/departments',   requireAuth, departmentsRoutes);
 app.use('/api/export',        requireAuth, exportRoutes);
 app.use('/api/stats',         requireAuth, statsRoutes);
 app.use('/api/users',         requireAuth, usersRoutes);
-app.use('/api/analytics',     requireAuth, analyticsRoutes);
 app.use('/api/notifications', requireAuth, notificationsRoutes);
 app.use('/api/import', requireAuth, importRoutes);
 

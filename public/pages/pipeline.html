@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <style>
-    /* ── Score badge ── */
     .score-badge {
       display: inline-flex; align-items: center; justify-content: center;
       width: 36px; height: 36px; border-radius: 50%;
@@ -19,8 +18,6 @@
       background: white; display: flex; align-items: center;
       justify-content: center; font-size: 0.7rem; font-weight: 800;
     }
-
-    /* ── Tooltip score ── */
     .score-tooltip {
       display: none;
       position: absolute; bottom: 44px; right: 0;
@@ -47,10 +44,7 @@
     }
     .score-critere:last-child { border-bottom: none; }
     .score-critere .critere-label { color: rgba(255,255,255,0.75); }
-    .score-critere .critere-val {
-      font-weight: 700;
-      color: var(--or-clair);
-    }
+    .score-critere .critere-val { font-weight: 700; color: var(--or-clair); }
     .score-critere .critere-val.negatif { color: #f87171; }
     .score-total {
       display: flex; justify-content: space-between;
@@ -59,69 +53,43 @@
       border-top: 1px solid rgba(255,255,255,0.2);
       color: white;
     }
-
-    /* ── Kanban card enrichie ── */
-    .kanban-card {
-      position: relative;
-    }
+    .kanban-col[data-etape="nouveau"]       .kanban-col-header { background: #f1f5f9; border-bottom: 3px solid #94a3b8; }
+    .kanban-col[data-etape="qualification"] .kanban-col-header { background: #fefce8; border-bottom: 3px solid #eab308; }
+    .kanban-col[data-etape="proposition"]   .kanban-col-header { background: #eff6ff; border-bottom: 3px solid #3b82f6; }
+    .kanban-col[data-etape="negociation"]   .kanban-col-header { background: #faf5ff; border-bottom: 3px solid #7c3aed; }
+    .kanban-col[data-etape="gagne"]         .kanban-col-header { background: #f0fdf4; border-bottom: 3px solid #16a34a; }
+    .kanban-col[data-etape="perdu"]         .kanban-col-header { background: #fff1f2; border-bottom: 3px solid #dc2626; }
+    .kanban-card { position: relative; }
     .kanban-card-header {
       display: flex; align-items: flex-start;
       justify-content: space-between; gap: 8px; margin-bottom: 6px;
     }
-    .kanban-card-titre {
-      font-weight: 700; font-size: 13px;
-      color: var(--bleu); flex: 1; line-height: 1.3;
-    }
-    .kanban-card-meta {
-      display: flex; justify-content: space-between;
-      align-items: center; margin-top: 8px;
-    }
-    .kanban-card-contact {
-      font-size: 12px; color: var(--gris);
-    }
-    .kanban-card-montant {
-      font-size: 13px; font-weight: 800; color: var(--bleu);
-    }
+    .kanban-card-titre { font-weight: 700; font-size: 13px; color: var(--bleu); flex: 1; line-height: 1.3; }
+    .kanban-card-contact { font-size: 12px; color: var(--gris); }
+    .kanban-card-montant { font-size: 13px; font-weight: 800; color: var(--bleu); }
     .kanban-card-footer {
       display: flex; justify-content: space-between;
       align-items: center; margin-top: 8px;
       padding-top: 8px; border-top: 1px solid var(--bordure);
     }
-    .kanban-card-date {
-      font-size: 0.72rem; color: var(--gris);
-      display: flex; align-items: center; gap: 4px;
-    }
+    .kanban-card-date { font-size: 0.72rem; color: var(--gris); display: flex; align-items: center; gap: 4px; }
     .kanban-card-date.urgente { color: #dc2626; font-weight: 600; }
-    .kanban-card-proba {
-      font-size: 0.72rem; font-weight: 600;
-      color: var(--gris); display: flex; align-items: center; gap: 4px;
-    }
-
-    /* ── Colonne total ── */
-    .kanban-col-total {
-      font-size: 0.72rem; color: var(--gris); font-weight: 500;
-    }
-
-    /* ── Légende scores ── */
+    .kanban-card-proba { font-size: 0.72rem; font-weight: 600; color: var(--gris); display: flex; align-items: center; gap: 4px; }
+    .kanban-col-total { font-size: 0.72rem; color: var(--gris); font-weight: 500; }
     .scores-legende {
       display: flex; gap: 16px; align-items: center;
       background: white; border: 1px solid var(--bordure);
       border-radius: 8px; padding: 10px 16px;
       margin-bottom: 16px; font-size: 0.78rem;
     }
-    .legende-item {
-      display: flex; align-items: center; gap: 6px;
-    }
-    .legende-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-    }
+    .legende-item { display: flex; align-items: center; gap: 6px; }
+    .legende-dot { width: 10px; height: 10px; border-radius: 50%; }
   </style>
 </head>
 <body>
   <div class="app-layout">
     <div id="sidebar-mount"></div>
     <div class="main-content">
-
       <div class="page-header">
         <div>
           <h1>Pipeline des opportunités</h1>
@@ -132,7 +100,6 @@
         </button>
       </div>
 
-      <!-- Légende scoring -->
       <div class="scores-legende">
         <span style="font-weight:700; color:var(--bleu); font-size:0.78rem;">
           <i class="bi bi-info-circle"></i> Score de priorité :
@@ -158,7 +125,7 @@
     </div>
   </div>
 
-  <!-- Modal Création/Édition -->
+  <!-- Modal -->
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal" style="position:relative;">
       <button class="modal-close" onclick="closeModal()">
@@ -227,62 +194,44 @@
 
     let opportunites = [];
     let contacts     = [];
-    let scoresMap    = {};
 
-    // ── Calcul du score côté front ────────────────────────────────────────────
-    // Même logique que server/routes/analytics.js
     function calculerScore(opp) {
       let score = 0;
       const criteres = [];
-
-      // Critère 1 : Étape
-      const pointsEtape = {
-        nouveau: 10, qualification: 25, proposition: 45,
-        negociation: 65, gagne: 100, perdu: 0
-      };
+      const pointsEtape = { nouveau: 10, qualification: 25, proposition: 45, negociation: 65, gagne: 100, perdu: 0 };
       const ptEtape = pointsEtape[opp.etape] || 0;
       score += ptEtape;
       criteres.push({ label: `Étape (${opp.etape})`, val: ptEtape });
 
-      // Critère 2 : Probabilité
       const ptProba = Math.round((opp.probabilite || 0) / 10);
       score += ptProba;
       criteres.push({ label: `Probabilité (${opp.probabilite || 0}%)`, val: ptProba });
 
-      // Critère 3 : Montant
       let ptMontant = 0;
       if ((opp.montant || 0) >= 500000) ptMontant = 10;
       else if ((opp.montant || 0) >= 100000) ptMontant = 5;
       score += ptMontant;
       if (ptMontant > 0) criteres.push({ label: `Montant élevé`, val: ptMontant });
 
-      // Critère 4 : Ancienneté
       const joursDepuisCreation = opp.created_at
-        ? Math.floor((new Date() - new Date(opp.created_at)) / (1000 * 60 * 60 * 24))
-        : 0;
+        ? Math.floor((new Date() - new Date(opp.created_at)) / (1000 * 60 * 60 * 24)) : 0;
       let ptAnciennete = 0;
       if (joursDepuisCreation > 60) ptAnciennete = -20;
       else if (joursDepuisCreation > 30) ptAnciennete = -10;
       score += ptAnciennete;
       if (ptAnciennete < 0) criteres.push({ label: `Stagnation (${joursDepuisCreation}j)`, val: ptAnciennete, negatif: true });
 
-      // Critère 5 : Date de clôture proche
       let ptDate = 0;
       if (opp.date_cloture_prevue) {
-        const joursRestants = Math.ceil(
-          (new Date(opp.date_cloture_prevue) - new Date()) / (1000 * 60 * 60 * 24)
-        );
+        const joursRestants = Math.ceil((new Date(opp.date_cloture_prevue) - new Date()) / (1000 * 60 * 60 * 24));
         if (joursRestants <= 7 && joursRestants >= 0) ptDate = 5;
         criteres.push({ label: `Clôture dans ${joursRestants}j`, val: ptDate });
       }
       score += ptDate;
-
       score = Math.max(0, Math.min(100, score));
-
       let priorite = 'faible';
       if (score >= 70) priorite = 'haute';
       else if (score >= 40) priorite = 'moyenne';
-
       return { score, priorite, criteres };
     }
 
@@ -292,12 +241,10 @@
       return '#ef4444';
     }
 
-    // ── Rendu du badge score avec tooltip ─────────────────────────────────────
     function renderScoreBadge(opp) {
       const { score, priorite, criteres } = calculerScore(opp);
       const couleur = couleurScore(score);
       const emoji   = priorite === 'haute' ? '🔥' : priorite === 'moyenne' ? '⚡' : '❄️';
-
       const critereHtml = criteres.map(c => `
         <div class="score-critere">
           <span class="critere-label">${c.label}</span>
@@ -306,16 +253,11 @@
           </span>
         </div>
       `).join('');
-
       return `
-        <div class="score-badge" style="
-          background: conic-gradient(${couleur} ${score * 3.6}deg, #f3f4f6 0deg);
-        ">
+        <div class="score-badge" style="background: conic-gradient(${couleur} ${score * 3.6}deg, #f3f4f6 0deg);">
           <div class="score-inner" style="color:${couleur};">${score}</div>
           <div class="score-tooltip">
-            <div class="score-tooltip-title">
-              ${emoji} Score de priorité
-            </div>
+            <div class="score-tooltip-title">${emoji} Score de priorité</div>
             ${critereHtml}
             <div class="score-total">
               <span>Score total</span>
@@ -326,92 +268,62 @@
       `;
     }
 
-    // ── Rendu Kanban ──────────────────────────────────────────────────────────
     function renderKanban() {
       const board = document.getElementById('kanban-board');
       board.innerHTML = ETAPES.map(etape => {
         const cards = opportunites.filter(o => o.etape === etape.key);
         const total = cards.reduce((s, c) => s + (c.montant || 0), 0);
-
         return `
           <div class="kanban-col" data-etape="${etape.key}"
             ondragover="onDragOver(event)"
             ondragleave="onDragLeave(event)"
             ondrop="onDrop(event, '${etape.key}')">
-
             <div class="kanban-col-header">
               <span>${etape.label} (${cards.length})</span>
               <span class="kanban-col-total">${formatMontant(total)}</span>
             </div>
-
             ${cards.map(c => {
-              const { score, priorite } = calculerScore(c);
-              const couleur = couleurScore(score);
-
-              // Calcul jours restants
               let dateHtml = '';
               if (c.date_cloture_prevue) {
-                const jours = Math.ceil(
-                  (new Date(c.date_cloture_prevue) - new Date()) / (1000 * 60 * 60 * 24)
-                );
+                const jours = Math.ceil((new Date(c.date_cloture_prevue) - new Date()) / (1000 * 60 * 60 * 24));
                 const urgente = jours <= 7 && jours >= 0;
                 dateHtml = `
                   <div class="kanban-card-date ${urgente ? 'urgente' : ''}">
                     <i class="bi bi-calendar${urgente ? '-x' : ''}"></i>
                     ${urgente ? `⚠️ ${jours}j restants` : formatDate(c.date_cloture_prevue)}
-                  </div>
-                `;
+                  </div>`;
               }
-
               return `
                 <div class="kanban-card"
                   draggable="true"
                   ondragstart="onDragStart(event, ${c.id})"
                   onclick="editOpp(${c.id})"
-                  style="border-left: 3px solid ${couleur};">
-
+                  style="border-left: 3px solid #e5e7eb;">
                   <div class="kanban-card-header">
                     <div class="kanban-card-titre">${c.titre}</div>
                     ${renderScoreBadge(c)}
                   </div>
-
                   <div class="kanban-card-contact">
                     <i class="bi bi-person" style="color:var(--gris);"></i>
                     ${c.contact_nom || 'Sans contact'}
                     ${c.contact_entreprise ? `· ${c.contact_entreprise}` : ''}
                   </div>
-
-                  <div class="kanban-card-meta">
-                    <div class="kanban-card-montant">${formatMontant(c.montant || 0, c.devise)}</div>
+                  <div class="kanban-card-meta" style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                    <div class="kanban-card-montant">${formatMontant(c.montant || 0)}</div>
                     <div class="kanban-card-proba">
                       <i class="bi bi-percent"></i> ${c.probabilite || 0}%
                     </div>
                   </div>
-
-                  ${dateHtml ? `
-                    <div class="kanban-card-footer">
-                      ${dateHtml}
-                    </div>
-                  ` : ''}
-                </div>
-              `;
+                  ${dateHtml ? `<div class="kanban-card-footer">${dateHtml}</div>` : ''}
+                </div>`;
             }).join('')}
-          </div>
-        `;
+          </div>`;
       }).join('');
     }
 
-    // ── Drag & Drop ───────────────────────────────────────────────────────────
-    function onDragStart(e, id) {
-      e.dataTransfer.setData('text/plain', id);
-    }
-    function onDragOver(e) {
-      e.preventDefault();
-      e.currentTarget.classList.add('drag-over');
-    }
-    function onDragLeave(e) {
-      e.currentTarget.classList.remove('drag-over');
-    }
+    function onDragStart(e, id) { e.dataTransfer.setData('text/plain', id); }
+    function onDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+    function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
     async function onDrop(e, nouvelleEtape) {
       e.preventDefault();
       e.currentTarget.classList.remove('drag-over');
@@ -420,7 +332,6 @@
       await refreshOpportunites();
     }
 
-    // ── Modal ─────────────────────────────────────────────────────────────────
     function openModal() {
       document.getElementById('modal-title').textContent = 'Nouvelle opportunité';
       document.getElementById('opp-form').reset();
@@ -431,7 +342,7 @@
     function editOpp(id) {
       const o = opportunites.find(x => x.id === id);
       if (!o) return;
-      document.getElementById('modal-title').textContent  = 'Modifier l\'opportunité';
+      document.getElementById('modal-title').textContent   = 'Modifier l\'opportunité';
       document.getElementById('opp-id').value             = o.id;
       document.getElementById('titre').value              = o.titre;
       document.getElementById('contact_id').value         = o.contact_id || '';
@@ -443,9 +354,7 @@
       document.getElementById('modal-overlay').classList.add('open');
     }
 
-    function closeModal() {
-      document.getElementById('modal-overlay').classList.remove('open');
-    }
+    function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 
     async function saveOpp(e) {
       e.preventDefault();
@@ -468,7 +377,6 @@
       } catch(err) { alert(err.message); }
     }
 
-    // ── Init ──────────────────────────────────────────────────────────────────
     async function loadPipeline() {
       await initSidebar('pipeline');
       contacts = await api.get('/api/contacts');

@@ -317,7 +317,7 @@ async function initSidebar(activePage) {
         display:flex; align-items:center; justify-content:center;
         cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.08);
       ">
-        <i class="bi bi-bell-fill" style="font-size:1.1rem; color:#1b3a6b;"></i>
+        <span style="font-size:1.1rem;">🔔</span>
         <span id="notif-badge" style="
           position:absolute; top:-4px; right:-4px;
           background:#ef4444; color:#fff; border-radius:999px;
@@ -403,9 +403,15 @@ async function initSidebar(activePage) {
         <a href="/taches" class="${activePage === 'taches' ? 'active' : ''}">
           <i class="bi bi-check2-square"></i> <span class="label">Tâches</span>
         </a>
-        <a href="/analytique" class="${activePage === 'analytique' ? 'active' : ''}">
-          <i class="bi bi-graph-up-arrow"></i> <span class="label">Analytique</span>
-        </a>
+        
+          const params = new URLSearchParams(window.location.search);
+          if (params.get('acces') === 'refuse') {
+            const errorBox = document.getElementById('dashboard-error');
+            errorBox.textContent = 'Accès refusé — Le module Analytique est réservé aux managers et administrateurs.';
+            errorBox.style.display = 'block';
+            // Effacer le paramètre de l'URL
+            window.history.replaceState({}, '', '/dashboard');
+          }
 
         <a href="/utilisateurs" class="${activePage === 'utilisateurs' ? 'active' : ''}"
            id="nav-users" style="display:none">
@@ -433,10 +439,13 @@ async function initSidebar(activePage) {
     if (user.role === 'admin' || user.role === 'manager') {
       document.getElementById('nav-users').style.display = 'flex';
     }
+    if (user.role === 'admin' || user.role === 'manager') {
+      document.getElementById('nav-analytique').style.display = 'flex';
+    }
 
     // Cloche visible uniquement pour l'admin
     if (user.role === 'admin') {
-      document.getElementById('notif-cloche').style.display = 'block';
+      document.getElementById('notif-cloche').style.display = 'flex';
       chargerNotifications();
       setInterval(chargerNotifications, 30000);
     }

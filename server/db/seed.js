@@ -11,7 +11,7 @@ const services = [
   { code: 'PUB020', titre: 'Campagne publicitaire', categorie: 'Publicité', description: 'Lancement et optimisation de campagnes publicitaires en ligne.', prix_ht: 200000, duree_mois: 1 },
   { code: 'BRD030', titre: 'Charte graphique', categorie: 'Design', description: 'Conception de charte graphique professionnelle.', prix_ht: 150000, duree_mois: 1 },
   { code: 'VID060', titre: 'Production vidéo', categorie: 'Video', description: 'Réalisation de vidéos promotionnelles et corporate.', prix_ht: 360000, duree_mois: 1 },
-  { code: 'EVT050', titre: 'Événementiel', categorie: 'Événementiel', description: 'Organisation d’événements et activations terrain.', prix_ht: 500000, duree_mois: 1 }
+  { code: 'EVT050', titre: 'Événementiel', categorie: 'Événementiel', description: 'Organisation d\'événements et activations terrain.', prix_ht: 500000, duree_mois: 1 }
 ];
 
 const packs = [
@@ -45,7 +45,6 @@ const packsById = {};
 function randomChoice(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
-
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -142,6 +141,7 @@ function createLignes() {
   });
 }
 
+// ── 100 Contacts ─────────────────────────────────────────────────────────────
 for (let i = 1; i <= 100; i++) {
   const nom = `${randomChoice(nombres)} ${String.fromCharCode(65 + (i % 26))}`;
   const entreprise = randomChoice(entreprises);
@@ -163,30 +163,20 @@ for (let i = 1; i <= 100; i++) {
     `INSERT OR IGNORE INTO contacts (type, nom, entreprise, email, telephone, adresse, ville, pays, siret, secteur, site_web, code_client, responsable, statut_client, date_entree, date_renouvellement, mode_paiement, note_technique, note_comptable, notes, owner_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
-    type,
-    nom,
-    entreprise,
-    email,
+    type, nom, entreprise, email,
     `+226 70 ${randomInt(10, 99)} ${randomInt(10, 99)}`,
     `${randomInt(10, 99)} rue de la Paix`,
-    ville,
-    'Burkina Faso',
-    siret,
-    secteur,
+    ville, 'Burkina Faso', siret, secteur,
     entreprise.toLowerCase() + '.bf',
-    code_client,
-    responsable,
-    statut_client,
-    date_entree,
-    date_renouvellement,
-    mode_paiement,
-    note_technique,
-    note_comptable,
+    code_client, responsable, statut_client,
+    date_entree, date_renouvellement, mode_paiement,
+    note_technique, note_comptable,
     `Données de test pour ${i}`,
     randomChoice(userRows).id
   );
 
   const contactId = result.lastInsertRowid || db.prepare('SELECT id FROM contacts WHERE code_client = ?').get(code_client).id;
+
   if (i % 4 === 0) {
     const serviceId = servicesRows[randomInt(0, servicesRows.length - 1)].id;
     db.prepare('INSERT OR IGNORE INTO contact_services (contact_id, service_id, statut, date_debut, date_fin, tarif_ht, renouvellement_auto) VALUES (?, ?, ?, ?, ?, ?, ?)')
@@ -202,6 +192,7 @@ for (let i = 1; i <= 100; i++) {
 const allContacts = db.prepare('SELECT * FROM contacts').all();
 const allUsers = db.prepare('SELECT * FROM users').all();
 
+// ── 120 Opportunités — devise forcée XOF ─────────────────────────────────────
 const opportunitesIds = [];
 for (let i = 1; i <= 120; i++) {
   const contact = randomChoice(allContacts);
@@ -215,7 +206,7 @@ for (let i = 1; i <= 120; i++) {
     `${randomChoice(['Proposition', 'Offre', 'Audit', 'Refonte', 'Campagne'])} ${randomChoice(['SUDICONE', 'NovaCom', 'MediaPlus'])}`,
     contact.id,
     montant,
-    randomChoice(['XOF', 'EUR', 'USD']),
+    'XOF', // ← forcé XOF uniquement
     etape,
     randomProbabilite(etape),
     date_cloture_prevue,
@@ -225,6 +216,7 @@ for (let i = 1; i <= 120; i++) {
   opportunitesIds.push(result.lastInsertRowid);
 }
 
+// ── 120 Factures/Devis ────────────────────────────────────────────────────────
 for (let i = 1; i <= 120; i++) {
   const contact = randomChoice(allContacts);
   const type = randomChoice(['devis', 'facture']);
@@ -242,16 +234,9 @@ for (let i = 1; i <= 120; i++) {
     `INSERT INTO factures (numero, type, contact_id, opportunite_id, statut, montant_ht, taux_tva, montant_ttc, date_emission, date_echeance, owner_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
-    numero,
-    type,
-    contact.id,
-    opportunite_id,
-    statut,
-    montant_ht,
-    taux_tva,
-    montant_ttc,
-    date_emission,
-    date_echeance,
+    numero, type, contact.id, opportunite_id, statut,
+    montant_ht, taux_tva, montant_ttc,
+    date_emission, date_echeance,
     randomChoice(allUsers).id
   );
 
@@ -262,6 +247,7 @@ for (let i = 1; i <= 120; i++) {
   });
 }
 
+// ── 120 Tâches ────────────────────────────────────────────────────────────────
 for (let i = 1; i <= 120; i++) {
   const contact = randomChoice(allContacts);
   const opportunite_id = Math.random() < 0.5 ? randomChoice(opportunitesIds) : null;
@@ -271,8 +257,7 @@ for (let i = 1; i <= 120; i++) {
   ).run(
     `Suivi ${randomChoice(['client', 'opportunité', 'projet', 'facturation'])} ${i}`,
     `Tâche de suivi pour ${contact.nom}`,
-    contact.id,
-    opportunite_id,
+    contact.id, opportunite_id,
     randomChoice(['a_faire', 'en_cours', 'terminee', 'annulee']),
     randomChoice(priorites),
     randomDate(new Date(), new Date(2025, 11, 31)),
@@ -280,6 +265,7 @@ for (let i = 1; i <= 120; i++) {
   );
 }
 
+// ── 40 Workflows ──────────────────────────────────────────────────────────────
 for (let i = 1; i <= 40; i++) {
   const contact = randomChoice(allContacts);
   const statut = randomChoice(workflowStatuses);
@@ -292,11 +278,7 @@ for (let i = 1; i <= 40; i++) {
   ).run(
     `Workflow ${i} ${randomChoice(['ganche', 'marketing', 'tech'])}`,
     `Workflow pour ${contact.nom}`,
-    contact.id,
-    statut,
-    owner.id,
-    date_debut,
-    date_fin_prevue
+    contact.id, statut, owner.id, date_debut, date_fin_prevue
   );
 
   const workflowId = result.lastInsertRowid;
@@ -306,12 +288,9 @@ for (let i = 1; i <= 40; i++) {
       `INSERT INTO workflow_steps (workflow_id, titre, description, statut, ordre, assigned_to, date_debut, date_fin)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
-      workflowId,
-      `Étape ${j}`,
-      `Étape ${j}`,
+      workflowId, `Étape ${j}`, `Étape ${j}`,
       randomChoice(['a_faire', 'en_cours', 'terminee']),
-      j,
-      randomChoice(allUsers).id,
+      j, randomChoice(allUsers).id,
       randomDate(new Date(date_debut), new Date(date_fin_prevue)),
       randomDate(new Date(date_debut), new Date(date_fin_prevue))
     );

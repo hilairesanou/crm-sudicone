@@ -1,6 +1,4 @@
 // public/js/common.js
-// Fonctions partagées par toutes les pages : appels API, sidebar, utilitaires
-
 const api = {
   async get(url) {
     const res = await fetch(url, { credentials: 'same-origin' });
@@ -65,8 +63,8 @@ function linearRegression(series) {
   if (n < 2) return { slope: 0, intercept: series[n - 1] || 0 };
   const x = series.map((_, index) => index + 1);
   const y = series;
-  const sumX = x.reduce((sum, value) => sum + value, 0);
-  const sumY = y.reduce((sum, value) => sum + value, 0);
+  const sumX  = x.reduce((sum, value) => sum + value, 0);
+  const sumY  = y.reduce((sum, value) => sum + value, 0);
   const sumXY = x.reduce((sum, value, index) => sum + value * y[index], 0);
   const sumXX = x.reduce((sum, value) => sum + value * value, 0);
   const denom = n * sumXX - sumX * sumX;
@@ -89,10 +87,10 @@ function badge(value, label) {
   return `<span class="badge badge-${value}">${label || value}</span>`;
 }
 
-// ── Panneau notifications ────────────────────────────────────────────────────
+// ── Panneau notifications ─────────────────────────────────────────────────────
 let notifPanneauOuvert = false;
-let notifData = [];
-let currentUserRole = null;
+let notifData          = [];
+let currentUserRole    = null;
 
 function toggleNotifPanneau() {
   notifPanneauOuvert = !notifPanneauOuvert;
@@ -137,8 +135,7 @@ async function chargerNotifications() {
     liste.innerHTML = notifData.map(n => `
       <div style="
         padding:12px 16px; border-bottom:1px solid #f3f4f6;
-        background:${n.lu ? '#fff' : '#fffbeb'};
-        cursor:pointer;
+        background:${n.lu ? '#fff' : '#fffbeb'}; cursor:pointer;
       " onclick="ouvrirNotif(${n.id})">
         <div style="display:flex; align-items:flex-start; gap:10px;">
           <div style="
@@ -172,14 +169,11 @@ async function chargerNotifications() {
 async function ouvrirNotif(id) {
   const notif = notifData.find(n => n.id === id);
   if (!notif) return;
-
   if (!notif.lu) {
     await api.patch(`/api/notifications/${id}/lire`);
     notif.lu = 1;
     chargerNotifications();
   }
-
-  // Seul l'admin peut assigner un lead
   if (notif.type === 'lead_public' && currentUserRole === 'admin') {
     ouvrirModalAssignation(notif);
   } else if (notif.contact_id) {
@@ -190,72 +184,52 @@ async function ouvrirNotif(id) {
 async function ouvrirModalAssignation(notif) {
   const agents = await api.get('/api/notifications/agents');
   const couleurDispo = { 'disponible': '#22c55e', 'chargé': '#f59e0b', 'surchargé': '#ef4444' };
-
   const modal = document.getElementById('notif-modal');
   document.getElementById('notif-modal-content').innerHTML = `
     <h3 style="margin:0 0 4px; font-size:1.1rem;">Assigner ce lead</h3>
     <p style="color:#6b7280; font-size:0.85rem; margin:0 0 20px;">
       ${notif.titre} — ${notif.message}
     </p>
-
     <div style="margin-bottom:16px;">
-      <label style="font-weight:600; font-size:0.85rem; display:block; margin-bottom:6px;">
-        Choisir un agent
-      </label>
+      <label style="font-weight:600; font-size:0.85rem; display:block; margin-bottom:6px;">Choisir un agent</label>
       <div style="display:flex; flex-direction:column; gap:8px;">
         ${agents.map(a => `
-          <label style="
-            display:flex; align-items:center; gap:12px;
-            border:1px solid #e5e7eb; border-radius:8px; padding:10px 14px;
-            cursor:pointer;
-          ">
+          <label style="display:flex; align-items:center; gap:12px;
+            border:1px solid #e5e7eb; border-radius:8px; padding:10px 14px; cursor:pointer;">
             <input type="radio" name="agent_id" value="${a.id}" style="accent-color:#1b3a6b;">
             <div style="flex:1;">
               <div style="font-weight:600; font-size:0.88rem;">${a.nom}</div>
-              <div style="color:#6b7280; font-size:0.78rem;">
-                ${a.role} · ${a.taches_actives} tâche(s) active(s)
-              </div>
+              <div style="color:#6b7280; font-size:0.78rem;">${a.role} · ${a.taches_actives} tâche(s) active(s)</div>
             </div>
-            <span style="
-              padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:600;
+            <span style="padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:600;
               background:${couleurDispo[a.disponibilite] || '#6b7280'}20;
-              color:${couleurDispo[a.disponibilite] || '#6b7280'};
-            ">${a.disponibilite}</span>
+              color:${couleurDispo[a.disponibilite] || '#6b7280'};">${a.disponibilite}</span>
           </label>
         `).join('')}
       </div>
     </div>
-
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
       <div>
-        <label style="font-weight:600; font-size:0.85rem; display:block; margin-bottom:6px;">
-          Date de début
-        </label>
-        <input type="date" id="assign-date-debut" style="
-          width:100%; padding:8px 10px; border:1px solid #e5e7eb;
-          border-radius:8px; font-size:0.85rem;
-        " value="${new Date().toISOString().split('T')[0]}">
+        <label style="font-weight:600; font-size:0.85rem; display:block; margin-bottom:6px;">Date de début</label>
+        <input type="date" id="assign-date-debut" style="width:100%; padding:8px 10px;
+          border:1px solid #e5e7eb; border-radius:8px; font-size:0.85rem;"
+          value="${new Date().toISOString().split('T')[0]}">
       </div>
       <div>
-        <label style="font-weight:600; font-size:0.85rem; display:block; margin-bottom:6px;">
-          Date limite
-        </label>
-        <input type="date" id="assign-date-fin" style="
-          width:100%; padding:8px 10px; border:1px solid #e5e7eb;
-          border-radius:8px; font-size:0.85rem;
-        ">
+        <label style="font-weight:600; font-size:0.85rem; display:block; margin-bottom:6px;">Date limite</label>
+        <input type="date" id="assign-date-fin" style="width:100%; padding:8px 10px;
+          border:1px solid #e5e7eb; border-radius:8px; font-size:0.85rem;">
       </div>
     </div>
-
     <div style="display:flex; gap:10px; justify-content:flex-end;">
-      <button onclick="fermerModalNotif()" style="
-        padding:8px 20px; border:1px solid #e5e7eb; border-radius:8px;
-        background:#fff; cursor:pointer; font-size:0.85rem; color:#6b7280;
-      ">Annuler</button>
-      <button onclick="confirmerAssignation(${notif.id})" style="
-        padding:8px 20px; border:none; border-radius:8px;
-        background:#1b3a6b; color:#fff; cursor:pointer; font-size:0.85rem; font-weight:600;
-      ">Assigner</button>
+      <button onclick="fermerModalNotif()" style="padding:8px 20px; border:1px solid #e5e7eb;
+        border-radius:8px; background:#fff; cursor:pointer; font-size:0.85rem; color:#6b7280;">
+        Annuler
+      </button>
+      <button onclick="confirmerAssignation(${notif.id})" style="padding:8px 20px; border:none;
+        border-radius:8px; background:#1b3a6b; color:#fff; cursor:pointer; font-size:0.85rem; font-weight:600;">
+        Assigner
+      </button>
     </div>
   `;
   modal.style.display = 'flex';
@@ -267,36 +241,23 @@ function fermerModalNotif() {
 
 async function confirmerAssignation(notifId) {
   const agentInput = document.querySelector('input[name="agent_id"]:checked');
-  if (!agentInput) {
-    alert('Veuillez sélectionner un agent.');
-    return;
-  }
-
+  if (!agentInput) { alert('Veuillez sélectionner un agent.'); return; }
   const agent_id   = parseInt(agentInput.value);
   const date_debut = document.getElementById('assign-date-debut').value;
   const date_fin   = document.getElementById('assign-date-fin').value;
-
   try {
-    const result = await api.post(`/api/notifications/${notifId}/assigner`, {
-      agent_id, date_debut, date_fin
-    });
+    const result = await api.post(`/api/notifications/${notifId}/assigner`, { agent_id, date_debut, date_fin });
     fermerModalNotif();
     fermerNotifPanneau();
     chargerNotifications();
-
     const toast = document.createElement('div');
     toast.textContent = result.message || 'Lead assigné avec succès !';
-    toast.style.cssText = `
-      position:fixed; bottom:24px; right:24px; z-index:9999;
-      background:#22c55e; color:#fff; padding:12px 20px;
-      border-radius:8px; font-size:0.88rem; font-weight:600;
-      box-shadow:0 4px 12px rgba(0,0,0,0.15);
-    `;
+    toast.style.cssText = `position:fixed; bottom:24px; right:24px; z-index:9999;
+      background:#22c55e; color:#fff; padding:12px 20px; border-radius:8px;
+      font-size:0.88rem; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.15);`;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
-  } catch (e) {
-    alert('Erreur : ' + e.message);
-  }
+  } catch (e) { alert('Erreur : ' + e.message); }
 }
 
 async function toutMarquerLu() {
@@ -304,69 +265,53 @@ async function toutMarquerLu() {
   chargerNotifications();
 }
 
-// ── Sidebar ──────────────────────────────────────────────────────────────────
+// ── Sidebar ───────────────────────────────────────────────────────────────────
 async function initSidebar(activePage) {
 
-  // Cloche et modals — injectés pour tout le monde, cachés selon le rôle
   const notifHtml = `
-    <!-- Cloche notifications -->
     <div id="notif-cloche" style="position:fixed; top:16px; right:24px; z-index:1000; display:none;">
       <button onclick="toggleNotifPanneau()" style="
         position:relative; background:#fff; border:1px solid #e5e7eb;
         border-radius:50%; width:42px; height:42px;
         display:flex; align-items:center; justify-content:center;
-        cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.08);
-      ">
+        cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
         <span style="font-size:1.1rem;">🔔</span>
         <span id="notif-badge" style="
           position:absolute; top:-4px; right:-4px;
           background:#ef4444; color:#fff; border-radius:999px;
           width:18px; height:18px; font-size:0.65rem; font-weight:700;
-          display:none; align-items:center; justify-content:center;
-        "></span>
+          display:none; align-items:center; justify-content:center;"></span>
       </button>
     </div>
 
-    <!-- Panneau notifications -->
     <div id="notif-panneau" style="
       display:none; position:fixed; top:68px; right:24px; z-index:999;
       width:380px; max-height:520px; background:#fff;
       border:1px solid #e5e7eb; border-radius:12px;
-      box-shadow:0 8px 24px rgba(0,0,0,0.12); overflow:hidden;
-      flex-direction:column;
-    ">
-      <div style="
-        display:flex; align-items:center; justify-content:space-between;
-        padding:14px 16px; border-bottom:1px solid #f3f4f6; background:#f9fafb;
-      ">
+      box-shadow:0 8px 24px rgba(0,0,0,0.12); overflow:hidden; flex-direction:column;">
+      <div style="display:flex; align-items:center; justify-content:space-between;
+        padding:14px 16px; border-bottom:1px solid #f3f4f6; background:#f9fafb;">
         <span style="font-weight:700; font-size:0.95rem;">
           <i class="bi bi-bell-fill" style="color:#f59e0b; margin-right:6px;"></i>
           Notifications
         </span>
         <div style="display:flex; gap:8px; align-items:center;">
-          <button onclick="toutMarquerLu()" style="
-            background:none; border:none; color:#3b82f6;
-            cursor:pointer; font-size:0.78rem;
-          ">Tout marquer lu</button>
-          <button onclick="fermerNotifPanneau()" style="
-            background:none; border:none; color:#9ca3af;
-            cursor:pointer; font-size:1rem;
-          "><i class="bi bi-x-lg"></i></button>
+          <button onclick="toutMarquerLu()" style="background:none; border:none;
+            color:#3b82f6; cursor:pointer; font-size:0.78rem;">Tout marquer lu</button>
+          <button onclick="fermerNotifPanneau()" style="background:none; border:none;
+            color:#9ca3af; cursor:pointer; font-size:1rem;">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
       </div>
       <div id="notif-liste" style="overflow-y:auto; max-height:440px;"></div>
     </div>
 
-    <!-- Modal assignation (admin uniquement) -->
     <div id="notif-modal" style="
       display:none; position:fixed; inset:0; z-index:1100;
-      background:rgba(0,0,0,0.4); align-items:center; justify-content:center;
-    ">
-      <div style="
-        background:#fff; border-radius:12px; padding:24px;
-        width:100%; max-width:500px; max-height:90vh; overflow-y:auto;
-        margin:16px;
-      ">
+      background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:12px; padding:24px;
+        width:100%; max-width:500px; max-height:90vh; overflow-y:auto; margin:16px;">
         <div id="notif-modal-content"></div>
       </div>
     </div>
@@ -403,18 +348,14 @@ async function initSidebar(activePage) {
         <a href="/taches" class="${activePage === 'taches' ? 'active' : ''}">
           <i class="bi bi-check2-square"></i> <span class="label">Tâches</span>
         </a>
-        
-          const params = new URLSearchParams(window.location.search);
-          if (params.get('acces') === 'refuse') {
-            const errorBox = document.getElementById('dashboard-error');
-            errorBox.textContent = 'Accès refusé — Le module Analytique est réservé aux managers et administrateurs.';
-            errorBox.style.display = 'block';
-            // Effacer le paramètre de l'URL
-            window.history.replaceState({}, '', '/dashboard');
-          }
-
-        <a href="/utilisateurs" class="${activePage === 'utilisateurs' ? 'active' : ''}"
-           id="nav-users" style="display:none">
+        <a href="/analytique" id="nav-analytique"
+           class="${activePage === 'analytique' ? 'active' : ''}"
+           style="display:none;">
+          <i class="bi bi-graph-up-arrow"></i> <span class="label">Analytique</span>
+        </a>
+        <a href="/utilisateurs" id="nav-users"
+           class="${activePage === 'utilisateurs' ? 'active' : ''}"
+           style="display:none;">
           <i class="bi bi-gear-fill"></i> <span class="label">Utilisateurs</span>
         </a>
       </nav>
@@ -435,15 +376,13 @@ async function initSidebar(activePage) {
       <button onclick="logout()">Déconnexion</button>
     `;
 
-    // Menu utilisateurs visible pour admin et manager
+    // Liens visibles selon le rôle
     if (user.role === 'admin' || user.role === 'manager') {
-      document.getElementById('nav-users').style.display = 'flex';
-    }
-    if (user.role === 'admin' || user.role === 'manager') {
+      document.getElementById('nav-users').style.display      = 'flex';
       document.getElementById('nav-analytique').style.display = 'flex';
     }
 
-    // Cloche visible uniquement pour l'admin
+    // Cloche uniquement pour l'admin
     if (user.role === 'admin') {
       document.getElementById('notif-cloche').style.display = 'flex';
       chargerNotifications();
@@ -461,7 +400,6 @@ async function logout() {
   window.location.href = '/login.html';
 }
 
-// Couleurs cohérentes pour les graphiques
 const CHART_COLORS = {
   bleu: '#0b2545', bleuFonce: '#071422', vert: '#16a34a', rouge: '#dc2626',
   orange: '#ea580c', violet: '#7c3aed', jaune: '#eab308', gris: '#6b7280', cyan: '#0891b2'

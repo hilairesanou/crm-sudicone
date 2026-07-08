@@ -1,12 +1,10 @@
 // server/app.js
-// MOTEUR PRINCIPAL DU CRM
-// Express + SQLite + sessions
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const helmet = require('helmet');
+const helmet  = require('helmet');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
+const path    = require('path');
 
 const { requireAuth } = require('./middleware/auth');
 
@@ -24,32 +22,28 @@ const exportRoutes        = require('./routes/export');
 const publicRoutes        = require('./routes/public');
 const analyticsRoutes     = require('./routes/analytics');
 const notificationsRoutes = require('./routes/notifications');
-const { lancerAutomations, regle_opportuniteGagnee, regle_nouveauClient } = require('./utils/automations');
-const importRoutes = require('./routes/import');
-const db                    = require('./db/connection');
+const importRoutes        = require('./routes/import');
+const db                  = require('./db/connection');
+const { lancerAutomations } = require('./utils/automations');
 const { envoyerRappelFacture } = require('./utils/mailer');
 
 const app  = express();
 const PORT = process.env.PORT || 4000;
 
 // ── Sécurité : Helmet ────────────────────────────────────────────────────────
-app.use(helmet({
-  contentSecurityPolicy: false,
-}));
+app.use(helmet({ contentSecurityPolicy: false }));
 
 // ── Sécurité : Rate limiting ─────────────────────────────────────────────────
-const limiterGeneral = rateLimit({
+app.use('/api/', rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
   message: { error: 'Trop de requêtes, réessayez dans 15 minutes.' }
-});
-const limiterAuth = rateLimit({
+}));
+app.use('/api/auth/login', rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   message: { error: 'Trop de tentatives de connexion, réessayez dans 15 minutes.' }
-});
-app.use('/api/', limiterGeneral);
-app.use('/api/auth/login', limiterAuth);
+}));
 
 // ── Middlewares globaux ──────────────────────────────────────────────────────
 app.use(express.json());
@@ -60,7 +54,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     maxAge: 1000 * 60 * 60 * 24 * 7,
-    secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE === 'true',
+    secure: false, // false en local et Railway gère HTTPS en proxy
     httpOnly: true
   }
 }));
@@ -70,12 +64,6 @@ app.use('/api/auth',   authRoutes);
 app.use('/api/public', publicRoutes);
 
 // ── Routes API protégées ─────────────────────────────────────────────────────
-app.get('/analytique', requireAuth, (req, res) => {
-  if (req.session.role === 'commercial') {
-    return res.redirect('/dashboard?acces=refuse');
-  }
-  res.sendFile(path.join(__dirname, '../public/pages/analytique.html'));
-});
 app.use('/api/contacts',      requireAuth, contactsRoutes);
 app.use('/api/opportunites',  requireAuth, opportunitesRoutes);
 app.use('/api/factures',      requireAuth, facturesRoutes);
@@ -85,9 +73,10 @@ app.use('/api/workflows',     requireAuth, workflowsRoutes);
 app.use('/api/departments',   requireAuth, departmentsRoutes);
 app.use('/api/export',        requireAuth, exportRoutes);
 app.use('/api/stats',         requireAuth, statsRoutes);
+app.use('/api/analytics',     requireAuth, analyticsRoutes);
 app.use('/api/users',         requireAuth, usersRoutes);
 app.use('/api/notifications', requireAuth, notificationsRoutes);
-app.use('/api/import', requireAuth, importRoutes);
+app.use('/api/import',        requireAuth, importRoutes);
 
 // ── Fichiers statiques ───────────────────────────────────────────────────────
 app.use('/vendor/chartjs', express.static(path.join(__dirname, '../node_modules/chart.js/dist')));
@@ -98,18 +87,27 @@ app.get('/', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/pages/dashboard.html'));
 });
 
+app.get('/dashboard', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/pages/dashboard.html'));
+});
+
+// Page analytique — réservée admin et manager
+app.get('/analytique', requireAuth, (req, res) => {
+  if (req.session.role === 'commercial') {
+    return res.redirect('/dashboard?acces=refuse');
+  }
+  res.sendFile(path.join(__dirname, '../public/pages/analytique.html'));
+});
+
+// Autres pages protégées
 const pagesProtegees = [
   'contacts', 'pipeline', 'services', 'workflows',
-  'organigramme', 'factures', 'taches', 'utilisateurs', 'analytique'
+  'organigramme', 'factures', 'taches', 'utilisateurs'
 ];
 pagesProtegees.forEach(page => {
   app.get(`/${page}`, requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, `../public/pages/${page}.html`));
   });
-});
-
-app.get('/dashboard', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/pages/dashboard.html'));
 });
 
 // ── Gestion des erreurs ──────────────────────────────────────────────────────
@@ -124,7 +122,6 @@ app.use((err, req, res, next) => {
 // ── Job automatique : factures en retard + rappels email ─────────────────────
 async function majFacturesEnRetard() {
   try {
-    // 1. Factures qui viennent de passer en retard
     const facturesEchues = db.prepare(`
       SELECT f.*, c.nom as contact_nom, c.email as contact_email
       FROM factures f
@@ -137,15 +134,10 @@ async function majFacturesEnRetard() {
 
     if (facturesEchues.length > 0) {
       console.log(`⏰ Job factures : ${facturesEchues.length} facture(s) à passer en retard`);
-
       for (const facture of facturesEchues) {
-        // Mettre à jour le statut
         db.prepare(`UPDATE factures SET statut = 'en_retard' WHERE id = ?`).run(facture.id);
-
-        // Envoyer email de rappel au client
         await envoyerRappelFacture(facture);
 
-        // Notifier l'admin dans le CRM
         const admin = db.prepare(
           `SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1`
         ).get();
@@ -168,7 +160,6 @@ async function majFacturesEnRetard() {
       }
     }
 
-    // 2. Factures déjà en retard — rappel tous les 7 jours
     const facturesDejaEnRetard = db.prepare(`
       SELECT f.*, c.nom as contact_nom, c.email as contact_email
       FROM factures f
@@ -193,17 +184,11 @@ async function majFacturesEnRetard() {
 // ── Démarrage serveur ────────────────────────────────────────────────────────
 const server = app.listen(PORT, async () => {
   console.log(`✓ CRM démarré sur http://localhost:${PORT}`);
-
-  // Lancer le job au démarrage
   await majFacturesEnRetard();
-
-  // Puis toutes les heures
   setInterval(majFacturesEnRetard, 60 * 60 * 1000);
+  lancerAutomations();
+  setInterval(lancerAutomations, 60 * 60 * 1000);
 });
-
-// Lancer les automations au démarrage puis toutes les heures
-lancerAutomations();
-setInterval(lancerAutomations, 60 * 60 * 1000);
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {

@@ -18,7 +18,7 @@
           <h1>Tableau de bord</h1>
           <p>Vue d'ensemble de votre activité — <span id="date-du-jour"></span></p>
         </div>
-        <a href="/analytique" class="btn btn-primary">
+        <a href="/analytique" class="btn btn-primary" id="btn-analytique" style="display:none;">
           <i class="bi bi-graph-up-arrow"></i> Analyse approfondie
         </a>
       </div>
@@ -53,10 +53,7 @@
           </span>
         </div>
 
-        <div style="
-          background:#fff; border:1px solid #e5e7eb;
-          border-radius:12px; overflow:hidden; margin-bottom:24px;
-        ">
+        <div style="background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:24px;">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:0;">
             <!-- Alertes -->
             <div style="border-right:1px solid #f3f4f6; padding:16px;">
@@ -70,9 +67,7 @@
                 <div id="alertes-extra" style="display:none; flex-direction:column; gap:8px;"></div>
                 <button onclick="toggleAlertes()" id="btn-alertes" style="
                   margin-top:8px; width:100%; padding:7px; border:1px solid #e5e7eb;
-                  border-radius:8px; background:#f9fafb; cursor:pointer;
-                  color:#6b7280; font-size:0.83rem;
-                ">
+                  border-radius:8px; background:#f9fafb; cursor:pointer; color:#6b7280; font-size:0.83rem;">
                   <i class="bi bi-chevron-down"></i>
                   <span id="btn-alertes-label">Voir toutes les alertes</span>
                 </button>
@@ -91,9 +86,7 @@
                 <div id="scoring-extra" style="display:none; flex-direction:column; gap:8px;"></div>
                 <button onclick="toggleScoring()" id="btn-scoring" style="
                   margin-top:8px; width:100%; padding:7px; border:1px solid #e5e7eb;
-                  border-radius:8px; background:#f9fafb; cursor:pointer;
-                  color:#6b7280; font-size:0.83rem;
-                ">
+                  border-radius:8px; background:#f9fafb; cursor:pointer; color:#6b7280; font-size:0.83rem;">
                   <i class="bi bi-chevron-down"></i>
                   <span id="btn-scoring-label">Voir toutes les opportunités</span>
                 </button>
@@ -134,12 +127,11 @@
         </div>
       </div>
 
-      <!-- ═══ LIEN VERS ANALYTIQUE ════════════════════════════════════════════ -->
-      <div style="
+      <!-- ═══ LIEN VERS ANALYTIQUE — visible admin/manager seulement ══════════ -->
+      <div id="banner-analytique" style="display:none;
         margin-top:24px; background:linear-gradient(135deg, var(--bleu) 0%, var(--bleu2) 100%);
         border-radius:12px; padding:24px 28px;
-        display:flex; align-items:center; justify-content:space-between;
-      ">
+        align-items:center; justify-content:space-between;">
         <div>
           <div style="font-size:1rem; font-weight:800; color:white; margin-bottom:4px;">
             <i class="bi bi-graph-up-arrow"></i> Vous voulez aller plus loin ?
@@ -152,8 +144,7 @@
           padding:10px 20px; background:var(--or); color:var(--bleu);
           border-radius:8px; font-weight:700; font-size:0.88rem;
           text-decoration:none; white-space:nowrap;
-          display:flex; align-items:center; gap:8px;
-        ">
+          display:flex; align-items:center; gap:8px;">
           <i class="bi bi-arrow-right-circle-fill"></i> Ouvrir le module analytique
         </a>
       </div>
@@ -167,6 +158,15 @@
   document.getElementById('date-du-jour').textContent = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   });
+
+  // ── Message accès refusé ──────────────────────────────────────────────────
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('acces') === 'refuse') {
+    const errorBox = document.getElementById('dashboard-error');
+    errorBox.textContent = '⛔ Accès refusé — Le module Analytique est réservé aux managers et administrateurs.';
+    errorBox.style.display = 'block';
+    window.history.replaceState({}, '', '/dashboard');
+  }
 
   function couleurNiveau(niveau) {
     return { critique: '#ef4444', warning: '#f59e0b', info: '#3b82f6' }[niveau] || '#6b7280';
@@ -187,12 +187,9 @@
 
   function renderAlerte(a) {
     return `
-      <div style="
-        display:flex; align-items:flex-start; gap:10px;
-        border:1px solid #e5e7eb;
-        border-left:4px solid ${couleurNiveau(a.niveau)};
-        border-radius:8px; padding:10px 12px;
-      ">
+      <div style="display:flex; align-items:flex-start; gap:10px;
+        border:1px solid #e5e7eb; border-left:4px solid ${couleurNiveau(a.niveau)};
+        border-radius:8px; padding:10px 12px;">
         <i class="bi ${iconeAlerte(a.type)}"
            style="color:${couleurNiveau(a.niveau)}; font-size:1rem; margin-top:2px; flex-shrink:0;"></i>
         <div style="flex:1; min-width:0;">
@@ -202,29 +199,23 @@
             ${a.message}
           </div>
         </div>
-        <a href="${a.lien}" style="
-          font-size:0.78rem; color:#3b82f6;
-          text-decoration:none; white-space:nowrap; flex-shrink:0;
-        ">Voir →</a>
+        <a href="${a.lien}" style="font-size:0.78rem; color:#3b82f6;
+          text-decoration:none; white-space:nowrap; flex-shrink:0;">Voir →</a>
       </div>`;
   }
 
   function renderScore(o) {
     return `
-      <div style="
-        display:flex; align-items:center; gap:12px;
-        border:1px solid #e5e7eb; border-radius:8px; padding:10px 12px;
-      ">
-        <div style="
-          width:42px; height:42px; border-radius:50%; flex-shrink:0;
+      <div style="display:flex; align-items:center; gap:12px;
+        border:1px solid #e5e7eb; border-radius:8px; padding:10px 12px;">
+        <div style="width:42px; height:42px; border-radius:50%; flex-shrink:0;
           background: conic-gradient(${couleurScore(o.score)} ${o.score * 3.6}deg, #f3f4f6 0deg);
-          display:flex; align-items:center; justify-content:center;
-        ">
-          <div style="
-            width:32px; height:32px; border-radius:50%; background:#fff;
+          display:flex; align-items:center; justify-content:center;">
+          <div style="width:32px; height:32px; border-radius:50%; background:#fff;
             display:flex; align-items:center; justify-content:center;
-            font-weight:700; font-size:0.78rem; color:${couleurScore(o.score)};
-          ">${o.score}</div>
+            font-weight:700; font-size:0.78rem; color:${couleurScore(o.score)};">
+            ${o.score}
+          </div>
         </div>
         <div style="flex:1; min-width:0;">
           <div style="font-weight:600; font-size:0.85rem;
@@ -235,11 +226,9 @@
             ${o.contact_nom || '—'} · ${o.etape} · ${formatMontant(o.montant || 0)}
           </div>
         </div>
-        <span style="
-          padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:600;
+        <span style="padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:600;
           background:${couleurScore(o.score)}15; color:${couleurScore(o.score)};
-          white-space:nowrap; flex-shrink:0;
-        ">
+          white-space:nowrap; flex-shrink:0;">
           ${o.priorite === 'haute' ? '🔥 Haute' : o.priorite === 'moyenne' ? '⚡ Moyenne' : '❄️ Faible'}
         </span>
       </div>`;
@@ -265,15 +254,12 @@
     try {
       const data = await api.get('/api/analytics/alertes');
       if (!data.total) return;
-
       document.getElementById('analytics-panel').style.display = 'block';
       document.getElementById('alertes-badge').textContent =
         `${data.critique} critique(s) · ${data.warning} warning(s)`;
-
       const top5  = data.alertes.slice(0, 5);
       const reste = data.alertes.slice(5);
       document.getElementById('alertes-liste').innerHTML = top5.map(renderAlerte).join('');
-
       if (reste.length) {
         document.getElementById('alertes-more').style.display = 'block';
         document.getElementById('alertes-extra').innerHTML = reste.map(renderAlerte).join('');
@@ -299,11 +285,16 @@
   }
 
   async function loadDashboard() {
-    await initSidebar('dashboard');
+    const user = await initSidebar('dashboard');
     await Promise.all([loadAlertes(), loadScoring()]);
 
-    const stats = await api.get('/api/stats/dashboard');
+    // ── Afficher les éléments réservés admin/manager ──────────────────
+    if (user && (user.role === 'admin' || user.role === 'manager')) {
+      document.getElementById('btn-analytique').style.display = 'flex';
+      document.getElementById('banner-analytique').style.display = 'flex';
+    }
 
+    const stats = await api.get('/api/stats/dashboard');
     document.getElementById('stats-grid').innerHTML = `
       <div class="stat-card">
         <div class="label">Contacts totaux</div>
@@ -416,15 +407,7 @@
       console.error(err);
     }
   })();
-  // Dans le script du dashboard, ajoute au début de loadDashboard()
-const params = new URLSearchParams(window.location.search);
-   if (params.get('acces') === 'refuse') {
-    const errorBox = document.getElementById('dashboard-error');
-    errorBox.textContent = 'Accès refusé — Le module Analytique est réservé aux managers et administrateurs.';
-    errorBox.style.display = 'block';
-    // Effacer le paramètre de l'URL
-    window.history.replaceState({}, '', '/dashboard');
-  }
+
   </script>
 </body>
 </html>

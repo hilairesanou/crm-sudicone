@@ -49,7 +49,10 @@ const api = {
 
 function formatMontant(montant, devise = 'XOF') {
   const n = Number(montant) || 0;
-  return n.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' ' + devise;
+  const formatted = Math.round(n)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return formatted + ' ' + devise;
 }
 
 function formatDate(dateStr) {

@@ -6,6 +6,19 @@ const PDFDocument = require('pdfkit');
 
 const router = express.Router();
 
+function formatMontant(montant) {
+  const n = Math.round(Number(montant) || 0);
+  let s = n.toString();
+  let result = '';
+  let count = 0;
+  for (let i = s.length - 1; i >= 0; i--) {
+    if (count > 0 && count % 3 === 0) result = ' ' + result;
+    result = s[i] + result;
+    count++;
+  }
+  return result + ' XOF';
+}
+
 function genererNumero(type) {
   const prefix = type === 'facture' ? 'FAC' : 'DEV';
   const annee  = new Date().getFullYear();
@@ -171,7 +184,7 @@ router.get('/:id/pdf', (req, res) => {
 
   // ── Helpers formatage ────────────────────────────────────────────
   function fmtMontant(n) {
-    return Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' XOF';
+    return formatMontant(n);
   }
   function fmtDate(d) {
     if (!d) return '—';

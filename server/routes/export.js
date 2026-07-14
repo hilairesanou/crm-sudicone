@@ -5,7 +5,21 @@ const PDFDocument = require('pdfkit');
 
 const router = express.Router();
 
-// ─── EXPORT EXISTANT : Contacts XLSX ────────────────────────────────────────
+// ─── Fonction utilitaire formatage montant ───────────────────────────────────
+function formatMontant(montant) {
+  const n = Math.round(Number(montant) || 0);
+  let s = n.toString();
+  let result = '';
+  let count = 0;
+  for (let i = s.length - 1; i >= 0; i--) {
+    if (count > 0 && count % 3 === 0) result = ' ' + result;
+    result = s[i] + result;
+    count++;
+  }
+  return result + ' XOF';
+}
+
+// ─── EXPORT : Contacts XLSX ──────────────────────────────────────────────────
 router.get('/contacts.xlsx', async (req, res) => {
   const contacts = db.prepare('SELECT * FROM contacts ORDER BY nom ASC').all();
   const workbook = new ExcelJS.Workbook();
@@ -29,7 +43,7 @@ router.get('/contacts.xlsx', async (req, res) => {
   res.end();
 });
 
-// ─── EXPORT EXISTANT : Clients PDF ──────────────────────────────────────────
+// ─── EXPORT : Clients PDF ────────────────────────────────────────────────────
 router.get('/clients.pdf', (req, res) => {
   const contacts = db.prepare('SELECT * FROM contacts WHERE type = ? ORDER BY nom ASC').all('client');
   const doc = new PDFDocument({ margin: 30, size: 'A4' });
@@ -39,14 +53,14 @@ router.get('/clients.pdf', (req, res) => {
   doc.fontSize(18).text('Liste des clients SUDICONE', { align: 'center' }).moveDown(0.5);
   doc.fontSize(10);
   contacts.forEach((c, index) => {
-    doc.text(`${index + 1}. ${c.nom} — ${c.entreprise || 'Sans entreprise'} (${c.email || '—'})`, { continued: false });
+    doc.text(`${index + 1}. ${c.nom} — ${c.entreprise || 'Sans entreprise'} (${c.email || '—'})`);
     doc.text(`    Code client: ${c.code_client || '—'} | Statut: ${c.statut_client || '—'} | Ville: ${c.ville || '—'} | Téléphone: ${c.telephone || '—'}`);
     doc.moveDown(0.2);
   });
   doc.end();
 });
 
-// ─── NOUVEAU : Rapport CA mensuel XLSX ──────────────────────────────────────
+// ─── EXPORT : Rapport CA mensuel XLSX ───────────────────────────────────────
 router.get('/rapport-ca.xlsx', async (req, res) => {
   const ca = db.prepare(`
     SELECT
@@ -64,7 +78,6 @@ router.get('/rapport-ca.xlsx', async (req, res) => {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'CRM Sudicone';
   const sheet = workbook.addWorksheet('CA Mensuel');
-
   sheet.columns = [
     { header: 'Mois', key: 'mois', width: 15 },
     { header: 'Nb Factures', key: 'nb_factures', width: 15 },
@@ -72,15 +85,12 @@ router.get('/rapport-ca.xlsx', async (req, res) => {
     { header: 'Total TTC (XOF)', key: 'total_ttc', width: 20 },
     { header: 'CA Encaissé (XOF)', key: 'ca_encaisse', width: 22 }
   ];
-
   sheet.getRow(1).eachCell(cell => {
     cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1B3A6B' } };
     cell.alignment = { horizontal: 'center' };
   });
-
   ca.forEach(row => sheet.addRow(row));
-
   const totalRow = sheet.addRow({
     mois: 'TOTAL',
     nb_factures: ca.reduce((s, r) => s + r.nb_factures, 0),
@@ -92,25 +102,19 @@ router.get('/rapport-ca.xlsx', async (req, res) => {
     cell.font = { bold: true };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EEF7' } };
   });
-
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', 'attachment; filename=rapport-ca.xlsx');
   await workbook.xlsx.write(res);
   res.end();
 });
 
-// ─── NOUVEAU : Rapport Pipeline XLSX ────────────────────────────────────────
+// ─── EXPORT : Rapport Pipeline XLSX ─────────────────────────────────────────
 router.get('/rapport-pipeline.xlsx', async (req, res) => {
   const opportunites = db.prepare(`
     SELECT
-      o.titre AS nom,
-      o.etape,
-      o.montant,
-      o.probabilite,
-      o.date_cloture_prevue AS date_cloture,
-      o.etape AS statut,
-      c.nom AS contact_nom,
-      c.entreprise AS contact_entreprise,
+      o.titre AS nom, o.etape, o.montant, o.probabilite,
+      o.date_cloture_prevue AS date_cloture, o.etape AS statut,
+      c.nom AS contact_nom, c.entreprise AS contact_entreprise,
       u.nom AS commercial_nom
     FROM opportunites o
     LEFT JOIN contacts c ON c.id = o.contact_id
@@ -121,7 +125,6 @@ router.get('/rapport-pipeline.xlsx', async (req, res) => {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'CRM Sudicone';
   const sheet = workbook.addWorksheet('Pipeline');
-
   sheet.columns = [
     { header: 'Opportunité', key: 'nom', width: 30 },
     { header: 'Étape', key: 'etape', width: 20 },
@@ -132,22 +135,19 @@ router.get('/rapport-pipeline.xlsx', async (req, res) => {
     { header: 'Entreprise', key: 'contact_entreprise', width: 25 },
     { header: 'Commercial', key: 'commercial_nom', width: 25 }
   ];
-
   sheet.getRow(1).eachCell(cell => {
     cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1B3A6B' } };
     cell.alignment = { horizontal: 'center' };
   });
-
   opportunites.forEach(row => sheet.addRow(row));
-
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', 'attachment; filename=rapport-pipeline.xlsx');
   await workbook.xlsx.write(res);
   res.end();
 });
 
-// ─── NOUVEAU : Rapport Performance Commerciaux XLSX ─────────────────────────
+// ─── EXPORT : Rapport Performance Commerciaux XLSX ───────────────────────────
 router.get('/rapport-commerciaux.xlsx', async (req, res) => {
   const perf = db.prepare(`
     SELECT
@@ -170,7 +170,6 @@ router.get('/rapport-commerciaux.xlsx', async (req, res) => {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'CRM Sudicone';
   const sheet = workbook.addWorksheet('Commerciaux');
-
   sheet.columns = [
     { header: 'Commercial', key: 'commercial', width: 25 },
     { header: 'Contacts', key: 'nb_contacts', width: 15 },
@@ -180,15 +179,12 @@ router.get('/rapport-commerciaux.xlsx', async (req, res) => {
     { header: 'Opportunités Perdues', key: 'nb_perdus', width: 22 },
     { header: 'Tâches assignées', key: 'nb_taches', width: 20 }
   ];
-
   sheet.getRow(1).eachCell(cell => {
     cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1B3A6B' } };
     cell.alignment = { horizontal: 'center' };
   });
-
   perf.forEach(row => sheet.addRow(row));
-
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', 'attachment; filename=rapport-commerciaux.xlsx');
   await workbook.xlsx.write(res);
@@ -198,19 +194,18 @@ router.get('/rapport-commerciaux.xlsx', async (req, res) => {
 // ─── RAPPORT ANALYTIQUE PDF MENSUEL ─────────────────────────────────────────
 router.get('/rapport-analytique.pdf', (req, res) => {
 
-  // ── Collecte des données ──────────────────────────────────────────────────
   const stats = {
-    totalContacts:    db.prepare('SELECT COUNT(*) as c FROM contacts').get().c,
-    totalClients:     db.prepare("SELECT COUNT(*) as c FROM contacts WHERE type='client'").get().c,
-    totalProspects:   db.prepare("SELECT COUNT(*) as c FROM contacts WHERE type='prospect'").get().c,
-    totalOpportunites:db.prepare('SELECT COUNT(*) as c FROM opportunites').get().c,
-    oppEnCours:       db.prepare("SELECT COUNT(*) as c FROM opportunites WHERE etape NOT IN ('gagne','perdu')").get().c,
-    oppGagnees:       db.prepare("SELECT COUNT(*) as c FROM opportunites WHERE etape='gagne'").get().c,
-    oppPerdues:       db.prepare("SELECT COUNT(*) as c FROM opportunites WHERE etape='perdu'").get().c,
-    caTotal:          db.prepare("SELECT COALESCE(SUM(montant_ttc),0) as t FROM factures WHERE statut='paye'").get().t,
-    facturesEnRetard: db.prepare("SELECT COUNT(*) as c FROM factures WHERE statut='en_retard'").get().c,
-    montantRetard:    db.prepare("SELECT COALESCE(SUM(montant_ttc),0) as t FROM factures WHERE statut='en_retard'").get().t,
-    tachesActives:    db.prepare("SELECT COUNT(*) as c FROM taches WHERE statut IN ('a_faire','en_cours')").get().c,
+    totalContacts:     db.prepare('SELECT COUNT(*) as c FROM contacts').get().c,
+    totalClients:      db.prepare("SELECT COUNT(*) as c FROM contacts WHERE type='client'").get().c,
+    totalProspects:    db.prepare("SELECT COUNT(*) as c FROM contacts WHERE type='prospect'").get().c,
+    totalOpportunites: db.prepare('SELECT COUNT(*) as c FROM opportunites').get().c,
+    oppEnCours:        db.prepare("SELECT COUNT(*) as c FROM opportunites WHERE etape NOT IN ('gagne','perdu')").get().c,
+    oppGagnees:        db.prepare("SELECT COUNT(*) as c FROM opportunites WHERE etape='gagne'").get().c,
+    oppPerdues:        db.prepare("SELECT COUNT(*) as c FROM opportunites WHERE etape='perdu'").get().c,
+    caTotal:           db.prepare("SELECT COALESCE(SUM(montant_ttc),0) as t FROM factures WHERE statut='paye'").get().t,
+    facturesEnRetard:  db.prepare("SELECT COUNT(*) as c FROM factures WHERE statut='en_retard'").get().c,
+    montantRetard:     db.prepare("SELECT COALESCE(SUM(montant_ttc),0) as t FROM factures WHERE statut='en_retard'").get().t,
+    tachesActives:     db.prepare("SELECT COUNT(*) as c FROM taches WHERE statut IN ('a_faire','en_cours')").get().c,
   };
 
   const tauxConversion = stats.totalOpportunites > 0
@@ -262,7 +257,6 @@ router.get('/rapport-analytique.pdf', (req, res) => {
     LIMIT 5
   `).all();
 
-  // ── Helpers PDF ───────────────────────────────────────────────────────────
   const BLEU  = '#0b2545';
   const OR    = '#c9a84c';
   const GRIS  = '#6b7280';
@@ -270,9 +264,8 @@ router.get('/rapport-analytique.pdf', (req, res) => {
   const VERT  = '#16a34a';
   const BLANC = '#ffffff';
 
-  function fmt(n) {
-    return Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' XOF';
-  }
+  function fmt(n) { return formatMontant(n); }
+
   function fmtDate(d) {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('fr-FR');
@@ -293,14 +286,13 @@ router.get('/rapport-analytique.pdf', (req, res) => {
     predictedCA = Math.max(0, intercept + slope * (n + 1));
   }
 
-  // ── Création du document PDF ──────────────────────────────────────────────
   const doc = new PDFDocument({ size: 'A4', margin: 0, info: {
     Title: 'Rapport Analytique Mensuel — SUDICONE',
     Author: 'CRM Sudicone',
     Subject: 'Analyse de données commerciales'
   }});
 
-  const now   = new Date();
+  const now    = new Date();
   const moisAn = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
   const dateGen = now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
 
@@ -309,36 +301,8 @@ router.get('/rapport-analytique.pdf', (req, res) => {
   doc.pipe(res);
 
   const W = doc.page.width;
-  const M = 40; // marge
+  const M = 40;
 
-  // ════════════════════════════════════════════════════════════════════
-  // PAGE 1 — EN-TÊTE + RÉSUMÉ EXÉCUTIF
-  // ════════════════════════════════════════════════════════════════════
-
-  // Header bleu
-  doc.rect(0, 0, W, 130).fill(BLEU);
-
-  // Logo SUDICONE
-  doc.fillColor(BLANC).font('Helvetica-Bold').fontSize(28)
-     .text('SUDICONE', M, 32);
-  doc.font('Helvetica').fontSize(10).fillColor('rgba(255,255,255,0.7)')
-     .text('Communication & Digital — Burkina Faso', M, 66);
-  doc.text('sudicone@gmail.com  ·  20 20 20 20', M, 82);
-  doc.text('Trame d\'accueil, 2ème étage, Immeuble Le Privilège, Ouagadougou', M, 98);
-
-  // Titre rapport (droite)
-  doc.rect(W - 220, 20, 180, 90).fill('rgba(255,255,255,0.1)').stroke('rgba(255,255,255,0.2)');
-  doc.fillColor(OR).font('Helvetica-Bold').fontSize(11)
-     .text('RAPPORT ANALYTIQUE', W - 210, 32, { width: 160, align: 'center' });
-  doc.fillColor(BLANC).font('Helvetica').fontSize(9)
-     .text(moisAn.toUpperCase(), W - 210, 52, { width: 160, align: 'center' });
-  doc.fillColor('rgba(255,255,255,0.7)').fontSize(8)
-     .text(`Généré le ${dateGen}`, W - 210, 70, { width: 160, align: 'center' });
-  doc.text(`Période : 12 derniers mois`, W - 210, 84, { width: 160, align: 'center' });
-
-  let y = 148;
-
-  // ── Titre section ─────────────────────────────────────────────────────────
   function sectionTitle(titre, yPos) {
     doc.rect(M, yPos, W - M*2, 22).fill('#f0f4f8');
     doc.rect(M, yPos, 4, 22).fill(BLEU);
@@ -347,7 +311,6 @@ router.get('/rapport-analytique.pdf', (req, res) => {
     return yPos + 32;
   }
 
-  // ── KPI card ──────────────────────────────────────────────────────────────
   function kpiCard(x, yPos, titre, valeur, sous, couleur) {
     const w = 115, h = 64;
     doc.rect(x, yPos, w, h).fill(BLANC).stroke('#e5e7eb');
@@ -360,7 +323,6 @@ router.get('/rapport-analytique.pdf', (req, res) => {
        .text(sous, x + 8, yPos + 42, { width: w-16 });
   }
 
-  // ── Ligne de tableau ──────────────────────────────────────────────────────
   function tableHeader(cols, yPos, bgColor = BLEU) {
     const totalW = W - M * 2;
     doc.rect(M, yPos, totalW, 20).fill(bgColor);
@@ -386,17 +348,32 @@ router.get('/rapport-analytique.pdf', (req, res) => {
     return yPos + 18;
   }
 
-  // ── SECTION 1 : Résumé exécutif ───────────────────────────────────────────
+  // ── Header ────────────────────────────────────────────────────────────────
+  doc.rect(0, 0, W, 130).fill(BLEU);
+  doc.fillColor(BLANC).font('Helvetica-Bold').fontSize(28).text('SUDICONE', M, 32);
+  doc.font('Helvetica').fontSize(10).fillColor('rgba(255,255,255,0.7)')
+     .text('Communication & Digital — Burkina Faso', M, 66);
+  doc.text('sudicone@gmail.com  ·  20 20 20 20', M, 82);
+  doc.text("Trame d'accueil, 2ème étage, Immeuble Le Privilège, Ouagadougou", M, 98);
+  doc.rect(W - 220, 20, 180, 90).fill('rgba(255,255,255,0.1)').stroke('rgba(255,255,255,0.2)');
+  doc.fillColor(OR).font('Helvetica-Bold').fontSize(11)
+     .text('RAPPORT ANALYTIQUE', W - 210, 32, { width: 160, align: 'center' });
+  doc.fillColor(BLANC).font('Helvetica').fontSize(9)
+     .text(moisAn.toUpperCase(), W - 210, 52, { width: 160, align: 'center' });
+  doc.fillColor('rgba(255,255,255,0.7)').fontSize(8)
+     .text(`Généré le ${dateGen}`, W - 210, 70, { width: 160, align: 'center' });
+  doc.text('Période : 12 derniers mois', W - 210, 84, { width: 160, align: 'center' });
+
+  let y = 148;
+
+  // ── Section 1 : Résumé exécutif ───────────────────────────────────────────
   y = sectionTitle('1. RÉSUMÉ EXÉCUTIF', y);
-
-  kpiCard(M,       y, 'CA Encaissé',         fmt(stats.caTotal),         `${stats.facturesEnRetard} facture(s) en retard`, BLEU);
-  kpiCard(M+120,   y, 'Taux de conversion',  `${tauxConversion}%`,       `${stats.oppGagnees} / ${stats.totalOpportunites} opps`, VERT);
-  kpiCard(M+240,   y, 'Contacts totaux',     String(stats.totalContacts),`${stats.totalClients} clients actifs`, OR);
-  kpiCard(M+360,   y, 'Impayés',             fmt(stats.montantRetard),   `${stats.facturesEnRetard} facture(s)`, ROUGE);
-
+  kpiCard(M,     y, 'CA Encaissé',        fmt(stats.caTotal),         `${stats.facturesEnRetard} facture(s) en retard`, BLEU);
+  kpiCard(M+120, y, 'Taux de conversion', `${tauxConversion}%`,       `${stats.oppGagnees} / ${stats.totalOpportunites} opps`, VERT);
+  kpiCard(M+240, y, 'Contacts totaux',    String(stats.totalContacts),`${stats.totalClients} clients actifs`, OR);
+  kpiCard(M+360, y, 'Impayés',            fmt(stats.montantRetard),   `${stats.facturesEnRetard} facture(s)`, ROUGE);
   y += 80;
 
-  // Indicateurs secondaires
   doc.rect(M, y, W-M*2, 36).fill('#f7f8fa');
   const indics = [
     { label: 'Opportunités actives', val: stats.oppEnCours },
@@ -415,52 +392,40 @@ router.get('/rapport-analytique.pdf', (req, res) => {
   });
   y += 52;
 
-  // ── SECTION 2 : CA mensuel ────────────────────────────────────────────────
-  y = sectionTitle('2. CHIFFRE D\'AFFAIRES MENSUEL (12 DERNIERS MOIS)', y);
-
+  // ── Section 2 : CA mensuel ────────────────────────────────────────────────
+  y = sectionTitle("2. CHIFFRE D'AFFAIRES MENSUEL (12 DERNIERS MOIS)", y);
   const colsCA = [
-    { key: 'mois',  label: 'Mois',       width: 90 },
-    { key: 'nb',    label: 'Nb factures', width: 90, align: 'center' },
-    { key: 'total', label: 'CA encaissé (XOF)', width: 180, align: 'right' },
-    { key: 'pct',   label: '% du total', width: 90, align: 'right' },
-    { key: 'barre', label: 'Visualisation', width: W-M*2-450, align: 'left' }
+    { key: 'mois',  label: 'Mois',              width: 90 },
+    { key: 'nb',    label: 'Nb factures',        width: 90,  align: 'center' },
+    { key: 'total', label: 'CA encaissé (XOF)',  width: 180, align: 'right' },
+    { key: 'pct',   label: '% du total',         width: 90,  align: 'right' },
+    { key: 'barre', label: 'Visualisation',      width: W-M*2-450 }
   ];
-
   y = tableHeader(colsCA, y);
-
-  const caMax = Math.max(...caMensuel.map(d => d.total), 1);
+  const caMax    = Math.max(...caMensuel.map(d => d.total), 1);
   const caGlobal = caMensuel.reduce((s, d) => s + d.total, 0);
-
   caMensuel.forEach((d, i) => {
-    const pct   = caGlobal > 0 ? Math.round((d.total / caGlobal) * 100) : 0;
-    const barW  = Math.round(((W-M*2-450) - 8) * (d.total / caMax));
+    const pct  = caGlobal > 0 ? Math.round((d.total / caGlobal) * 100) : 0;
+    const barW = Math.round(((W-M*2-450) - 8) * (d.total / caMax));
     const isEven = i % 2 === 0;
     if (isEven) doc.rect(M, y, W-M*2, 18).fill('#f7f8fa');
-
     let x = M;
     doc.fillColor('#111827').font('Helvetica').fontSize(8);
-    doc.text(d.mois,                       x+4,  y+5, { width: 86 });           x += 90;
-    doc.text(String(d.nb),                 x+4,  y+5, { width: 86, align:'center' }); x += 90;
-    doc.text(fmt(d.total),                 x+4,  y+5, { width: 176, align:'right' }); x += 180;
-    doc.text(`${pct}%`,                    x+4,  y+5, { width: 86, align:'right' }); x += 90;
-
-    // Barre
-    if (barW > 0) {
-      doc.rect(x+4, y+5, barW, 8).fill(BLEU);
-    }
+    doc.text(d.mois,       x+4, y+5, { width: 86 });                    x += 90;
+    doc.text(String(d.nb), x+4, y+5, { width: 86, align:'center' });    x += 90;
+    doc.text(fmt(d.total), x+4, y+5, { width: 176, align:'right' });    x += 180;
+    doc.text(`${pct}%`,    x+4, y+5, { width: 86, align:'right' });     x += 90;
+    if (barW > 0) doc.rect(x+4, y+5, barW, 8).fill(BLEU);
     y += 18;
   });
-
-  // Total
   doc.rect(M, y, W-M*2, 20).fill('#e8eef7');
   doc.fillColor(BLEU).font('Helvetica-Bold').fontSize(8)
      .text('TOTAL', M+4, y+6, { width: 86 });
   doc.text(fmt(caGlobal), M+360, y+6, { width: 176, align: 'right' });
   y += 30;
 
-  // ── SECTION 3 : Pipeline ──────────────────────────────────────────────────
+  // ── Section 3 : Pipeline ──────────────────────────────────────────────────
   y = sectionTitle('3. ÉTAT DU PIPELINE COMMERCIAL', y);
-
   const etapeLabels = {
     nouveau: 'Nouveau', qualification: 'Qualification',
     proposition: 'Proposition', negociation: 'Négociation',
@@ -471,47 +436,37 @@ router.get('/rapport-analytique.pdf', (req, res) => {
     proposition: '#3b82f6', negociation: '#7c3aed',
     gagne: '#16a34a', perdu: '#dc2626'
   };
-
   const colsPipeline = [
-    { key: 'etape',   label: 'Étape',         width: 130 },
-    { key: 'count',   label: 'Nb opps',        width: 80, align: 'center' },
+    { key: 'etape',   label: 'Étape',              width: 130 },
+    { key: 'count',   label: 'Nb opps',             width: 80,  align: 'center' },
     { key: 'montant', label: 'Montant total (XOF)', width: 180, align: 'right' },
-    { key: 'pct',     label: '% nb',           width: 80, align: 'center' },
-    { key: 'barre',   label: 'Visualisation',  width: W-M*2-470 },
+    { key: 'pct',     label: '% nb',               width: 80,  align: 'center' },
+    { key: 'barre',   label: 'Visualisation',       width: W-M*2-470 },
   ];
   y = tableHeader(colsPipeline, y);
-
   const totalOppsAll = pipeline.reduce((s, d) => s + d.count, 0);
   const maxCount     = Math.max(...pipeline.map(d => d.count), 1);
-
   pipeline.forEach((d, i) => {
     const pct  = totalOppsAll > 0 ? Math.round((d.count / totalOppsAll) * 100) : 0;
     const barW = Math.round(((W-M*2-470) - 8) * (d.count / maxCount));
     const clr  = etapeCouleurs[d.etape] || BLEU;
     const isEven = i % 2 === 0;
     if (isEven) doc.rect(M, y, W-M*2, 18).fill('#f7f8fa');
-
     let x = M;
-    // Point coloré + label étape
     doc.circle(x+10, y+9, 4).fill(clr);
     doc.fillColor('#111827').font('Helvetica').fontSize(8)
        .text(etapeLabels[d.etape] || d.etape, x+20, y+5, { width: 106 });
     x += 130;
-    doc.text(String(d.count),  x+4, y+5, { width: 76, align:'center' }); x += 80;
-    doc.text(fmt(d.montant),   x+4, y+5, { width: 176, align:'right' }); x += 180;
-    doc.text(`${pct}%`,        x+4, y+5, { width: 76, align:'center' }); x += 80;
+    doc.text(String(d.count), x+4, y+5, { width: 76, align:'center' }); x += 80;
+    doc.text(fmt(d.montant),  x+4, y+5, { width: 176, align:'right' }); x += 180;
+    doc.text(`${pct}%`,       x+4, y+5, { width: 76, align:'center' }); x += 80;
     if (barW > 0) doc.rect(x+4, y+5, barW, 8).fill(clr);
     y += 18;
   });
   y += 10;
 
-  // ════════════════════════════════════════════════════════════════════
-  // PAGE 2
-  // ════════════════════════════════════════════════════════════════════
+  // ── PAGE 2 ────────────────────────────────────────────────────────────────
   doc.addPage({ margin: 0 });
-  y = M;
-
-  // Mini header page 2
   doc.rect(0, 0, W, 36).fill(BLEU);
   doc.fillColor(BLANC).font('Helvetica-Bold').fontSize(11)
      .text('SUDICONE — Rapport Analytique', M, 12);
@@ -519,26 +474,22 @@ router.get('/rapport-analytique.pdf', (req, res) => {
      .text(moisAn, W - 130, 14);
   y = 52;
 
-  // ── SECTION 4 : Performances commerciaux ─────────────────────────────────
+  // ── Section 4 : Performances commerciaux ─────────────────────────────────
   y = sectionTitle('4. PERFORMANCES COMMERCIALES', y);
-
   const colsComm = [
-    { key: 'nom',      label: 'Commercial',       width: 140 },
-    { key: 'nb_opps',  label: 'Opportunités',      width: 90,  align: 'center' },
-    { key: 'nb_gagnes',label: 'Gagnées',           width: 80,  align: 'center' },
-    { key: 'taux',     label: 'Taux réussite',     width: 90,  align: 'center' },
-    { key: 'ca_gagne', label: 'CA gagné (XOF)',    width: 155, align: 'right' },
+    { key: 'nom',       label: 'Commercial',    width: 140 },
+    { key: 'nb_opps',   label: 'Opportunités',  width: 90,  align: 'center' },
+    { key: 'nb_gagnes', label: 'Gagnées',       width: 80,  align: 'center' },
+    { key: 'taux',      label: 'Taux réussite', width: 90,  align: 'center' },
+    { key: 'ca_gagne',  label: 'CA gagné (XOF)',width: 155, align: 'right' },
   ];
   y = tableHeader(colsComm, y);
-
   commerciaux.forEach((c, i) => {
     const taux = c.nb_opps > 0 ? Math.round((c.nb_gagnes / c.nb_opps) * 100) : 0;
     const tauxColor = taux >= 50 ? VERT : taux >= 25 ? OR : ROUGE;
     const isEven = i % 2 === 0;
     if (isEven) doc.rect(M, y, W-M*2, 18).fill('#f7f8fa');
-
     let x = M;
-    // Rang
     doc.fillColor(BLEU).font('Helvetica-Bold').fontSize(7.5)
        .text(`#${i+1}`, x+4, y+5, { width: 20 });
     doc.fillColor('#111827').font('Helvetica').fontSize(8)
@@ -546,26 +497,21 @@ router.get('/rapport-analytique.pdf', (req, res) => {
     x += 140;
     doc.text(String(c.nb_opps),   x+4, y+5, { width: 86, align:'center' }); x += 90;
     doc.text(String(c.nb_gagnes), x+4, y+5, { width: 76, align:'center' }); x += 80;
-
-    // Badge taux
     doc.rect(x+20, y+3, 50, 12).fill(tauxColor + '20');
     doc.fillColor(tauxColor).font('Helvetica-Bold').fontSize(8)
        .text(`${taux}%`, x+20, y+5, { width: 50, align:'center' });
     x += 90;
-
     doc.fillColor('#111827').font('Helvetica').fontSize(8)
        .text(fmt(c.ca_gagne), x+4, y+5, { width: 151, align:'right' });
     y += 18;
   });
   y += 14;
 
-  // ── SECTION 5 : Top opportunités ─────────────────────────────────────────
+  // ── Section 5 : Top opportunités ─────────────────────────────────────────
   y = sectionTitle('5. TOP 5 OPPORTUNITÉS PRIORITAIRES', y);
-
+  const ptEtape = { nouveau:10, qualification:25, proposition:45, negociation:65, gagne:100, perdu:0 };
   topOpps.forEach((o, i) => {
-    // Calcul score simplifié
-    const ptEtape = { nouveau:10, qualification:25, proposition:45, negociation:65, gagne:100, perdu:0 };
-    const jours   = o.created_at
+    const jours = o.created_at
       ? Math.floor((new Date() - new Date(o.created_at)) / (1000*60*60*24)) : 0;
     let score = (ptEtape[o.etape] || 0) + Math.round((o.probabilite||0)/10);
     if (jours > 60) score -= 20;
@@ -573,99 +519,71 @@ router.get('/rapport-analytique.pdf', (req, res) => {
     if ((o.montant||0) >= 500000) score += 10;
     score = Math.max(0, Math.min(100, score));
     const sColor = score >= 70 ? VERT : score >= 40 ? OR : ROUGE;
-    const emoji  = score >= 70 ? '🔥' : score >= 40 ? '⚡' : '❄️';
-
-    doc.rect(M, y, W-M*2, 44).fill(i%2===0 ? '#f7f8fa' : BLANC)
-       .stroke('#e5e7eb');
+    doc.rect(M, y, W-M*2, 44).fill(i%2===0 ? '#f7f8fa' : BLANC).stroke('#e5e7eb');
     doc.rect(M, y, 3, 44).fill(sColor);
-
-    // Score cercle
     doc.circle(M+22, y+22, 16).fill(sColor+'20').stroke(sColor);
     doc.fillColor(sColor).font('Helvetica-Bold').fontSize(9)
        .text(String(score), M+10, y+17, { width: 24, align:'center' });
-
-    // Contenu
     doc.fillColor(BLEU).font('Helvetica-Bold').fontSize(9)
        .text(o.titre, M+44, y+6, { width: W-M*2-160 });
     doc.fillColor(GRIS).font('Helvetica').fontSize(7.5)
        .text(`Contact : ${o.contact_nom || '—'}  ·  Étape : ${etapeLabels[o.etape] || o.etape}  ·  Probabilité : ${o.probabilite||0}%  ·  Clôture : ${fmtDate(o.date_cloture_prevue)}`, M+44, y+20, { width: W-M*2-160 });
-
-    // Montant
-    doc.fillColor(BLEU).font('Helvetica-Bold').fontSize(10)
-       .text(fmt(o.montant), W-M-120, y+14, { width: 110, align:'right' });
-    doc.fillColor(GRIS).font('Helvetica').fontSize(7.5)
-       .text(emoji + ' Priorité ' + (score>=70?'haute':score>=40?'moyenne':'faible'), W-M-120, y+28, { width: 110, align:'right' });
-
-    y += 48;
+    doc.fillColor(BLEU).font('Helvetica-Bold').fontSize(8)
+       .text(fmt(o.montant), W-M-120, y+6, { width: 110, align:'right' });
+    y += 50;
   });
-  y += 8;
+  y += 10;
 
-  // ── SECTION 6 : Alertes ───────────────────────────────────────────────────
-  y = sectionTitle('6. ALERTES — FACTURES EN RETARD', y);
-
-  if (alertes.length === 0) {
-    doc.rect(M, y, W-M*2, 30).fill('#dcfce7');
-    doc.fillColor(VERT).font('Helvetica-Bold').fontSize(9)
-       .text('✓ Aucune facture en retard — situation saine !', M+12, y+10);
-    y += 40;
-  } else {
-    const colsAlertes = [
-      { key: 'numero',        label: 'N° Facture',     width: 120 },
-      { key: 'date_echeance', label: 'Échéance',       width: 100 },
-      { key: 'jours',         label: 'Jours retard',   width: 90, align: 'center' },
-      { key: 'montant_ttc',   label: 'Montant TTC',    width: 155, align: 'right' },
+  // ── Section 6 : Alertes factures ─────────────────────────────────────────
+  if (alertes.length > 0) {
+    y = sectionTitle('6. ALERTES — FACTURES EN RETARD', y);
+    const colsAlert = [
+      { key: 'numero',      label: 'N° Facture',    width: 120 },
+      { key: 'contact_nom', label: 'Client',        width: 150 },
+      { key: 'montant_ttc', label: 'Montant TTC',   width: 130, align: 'right' },
+      { key: 'echeance',    label: 'Échéance',      width: 100, align: 'center' },
+      { key: 'retard',      label: 'Jours retard',  width: 80,  align: 'center' },
     ];
-    y = tableHeader(colsAlertes, y, ROUGE);
-
+    y = tableHeader(colsAlert, y, ROUGE);
     alertes.forEach((f, i) => {
-      const jours = Math.floor(
-        (new Date() - new Date(f.date_echeance)) / (1000*60*60*24)
-      );
-      if (i%2===0) doc.rect(M, y, W-M*2, 18).fill('#fff5f5');
+      const joursRetard = f.date_echeance
+        ? Math.floor((new Date() - new Date(f.date_echeance)) / (1000*60*60*24)) : 0;
+      const isEven = i % 2 === 0;
+      if (isEven) doc.rect(M, y, W-M*2, 18).fill('#fff5f5');
       let x = M;
+      doc.fillColor('#111827').font('Helvetica').fontSize(8);
+      doc.text(f.numero || '—',                  x+4, y+5, { width: 116 });           x += 120;
+      doc.text(f.contact_nom || '—',             x+4, y+5, { width: 146 });           x += 150;
+      doc.text(fmt(f.montant_ttc),               x+4, y+5, { width: 126, align:'right' }); x += 130;
+      doc.text(fmtDate(f.date_echeance),         x+4, y+5, { width: 96, align:'center' });  x += 100;
       doc.fillColor(ROUGE).font('Helvetica-Bold').fontSize(8)
-         .text(f.numero, x+4, y+5, { width: 116 }); x += 120;
-      doc.fillColor('#111827').font('Helvetica').fontSize(8)
-         .text(fmtDate(f.date_echeance), x+4, y+5, { width: 96 }); x += 100;
-      doc.fillColor(ROUGE).font('Helvetica-Bold').fontSize(8)
-         .text(`${jours} jours`, x+4, y+5, { width: 86, align:'center' }); x += 90;
-      doc.fillColor('#111827').font('Helvetica').fontSize(8)
-         .text(fmt(f.montant_ttc), x+4, y+5, { width: 151, align:'right' });
+         .text(`${joursRetard}j`,                x+4, y+5, { width: 76, align:'center' });
       y += 18;
     });
-
-    // Total impayés
     doc.rect(M, y, W-M*2, 20).fill('#fee2e2');
     doc.fillColor(ROUGE).font('Helvetica-Bold').fontSize(8)
        .text('TOTAL IMPAYÉS', M+4, y+6, { width: 300 });
-    doc.text(fmt(stats.montantRetard), M+310, y+6, { width: 155+90+100+120-310-8, align:'right' });
+    doc.text(fmt(stats.montantRetard), M+390, y+6, { width: 120, align:'right' });
     y += 30;
   }
 
-  // ── SECTION 7 : Prévisions ────────────────────────────────────────────────
+  // ── Section 7 : Prévisions ────────────────────────────────────────────────
   y = sectionTitle('7. PRÉVISIONS & RECOMMANDATIONS', y);
-
   doc.rect(M, y, W-M*2, 80).fill('#f0f4f8');
   doc.rect(M, y, 3, 80).fill(BLEU);
-
   doc.fillColor(BLEU).font('Helvetica-Bold').fontSize(10)
      .text('CA prévisionnel (mois prochain)', M+12, y+10);
   doc.fillColor(BLEU).font('Helvetica-Bold').fontSize(18)
      .text(fmt(predictedCA), M+12, y+24);
   doc.fillColor(GRIS).font('Helvetica').fontSize(8)
      .text(`Calculé par régression linéaire sur ${series.length} mois de données`, M+12, y+50);
-
   const tendance = series.length >= 2
     ? series[series.length-1] > series[series.length-2] ? '↑ Croissante' : '↓ Décroissante'
     : 'Données insuffisantes';
   const tendColor = tendance.includes('↑') ? VERT : ROUGE;
+  doc.fillColor(GRIS).font('Helvetica').fontSize(8).text('Tendance :', M+12, y+62);
+  doc.fillColor(tendColor).font('Helvetica-Bold').fontSize(8).text(tendance, M+70, y+62);
 
-  doc.fillColor(GRIS).font('Helvetica').fontSize(8)
-     .text('Tendance :', M+12, y+62);
-  doc.fillColor(tendColor).font('Helvetica-Bold').fontSize(8)
-     .text(tendance, M+70, y+62);
-
-  // Recommandations
   const recoms = [];
   if (stats.facturesEnRetard > 0)
     recoms.push(`⚠️ ${stats.facturesEnRetard} facture(s) en retard à relancer — montant total : ${fmt(stats.montantRetard)}`);
@@ -674,19 +592,15 @@ router.get('/rapport-analytique.pdf', (req, res) => {
   if (stats.oppEnCours > 20)
     recoms.push(`🎯 ${stats.oppEnCours} opportunités actives — prioriser les plus scorées`);
   recoms.push(`💡 CA prévisionnel : ${fmt(predictedCA)} — tendance ${tendance}`);
-
   y += 90;
+  recoms.forEach(r => {
+    doc.rect(M, y, W-M*2, 20).fill(BLANC).stroke('#e5e7eb');
+    doc.fillColor('#111827').font('Helvetica').fontSize(8.5)
+       .text(r, M+10, y+6, { width: W-M*2-20 });
+    y += 22;
+  });
 
-  if (recoms.length > 0) {
-    recoms.forEach(r => {
-      doc.rect(M, y, W-M*2, 20).fill(BLANC).stroke('#e5e7eb');
-      doc.fillColor('#111827').font('Helvetica').fontSize(8.5)
-         .text(r, M+10, y+6, { width: W-M*2-20 });
-      y += 22;
-    });
-  }
-
-  // ── PIED DE PAGE ──────────────────────────────────────────────────────────
+  // ── Pied de page ──────────────────────────────────────────────────────────
   y = doc.page.height - 40;
   doc.moveTo(M, y).lineTo(W-M, y).stroke('#e5e7eb');
   doc.fillColor(GRIS).font('Helvetica').fontSize(7.5)

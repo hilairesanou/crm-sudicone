@@ -1,22 +1,26 @@
 // server/routes/analytics.js
 // MODULE ANALYTIQUE — Aide à la décision commerciale
-// Scoring par règles métier + alertes intelligentes + indicateurs enrichis
-// Pas de ML : tout se calcule sur les données temps réel
 
 const express = require('express');
 const db = require('../db/connection');
 
 const router = express.Router();
 
-// ─── 1. SCORING DES OPPORTUNITÉS ────────────────────────────────────────────
-// GET /api/analytics/scoring
-// Calcule un score de priorité (0-100) pour chaque opportunité active
-// Règles métier :
-//   - Étape avancée         → +points
-//   - Montant élevé         → +points
-//   - Opportunité récente   → +points (ancienne sans mouvement → malus)
-//   - Probabilité élevée    → +points
+// ─── Fonction utilitaire formatage montant ───────────────────────────────────
+function formatMontant(montant) {
+  const n = Math.round(Number(montant) || 0);
+  let s = n.toString();
+  let result = '';
+  let count = 0;
+  for (let i = s.length - 1; i >= 0; i--) {
+    if (count > 0 && count % 3 === 0) result = ' ' + result;
+    result = s[i] + result;
+    count++;
+  }
+  return result + ' XOF';
+}
 
+// ─── 1. SCORING DES OPPORTUNITÉS ────────────────────────────────────────────
 router.get('/scoring', (req, res) => {
   const opportunites = db.prepare(`
     SELECT
@@ -30,13 +34,12 @@ router.get('/scoring', (req, res) => {
     WHERE o.etape NOT IN ('gagne', 'perdu')
   `).all();
 
-  // Points par étape — equivalent d'un choix métier documentable dans le mémoire
   const pointsEtape = {
-    'prospect':     10,
+    'prospect':      10,
     'qualification': 25,
-    'proposition':  45,
-    'negociation':  65,
-    'closing':      80
+    'proposition':   45,
+    'negociation':   65,
+    'closing':       80
   };
 
   const scored = opportunites.map(o => {
@@ -45,50 +48,33 @@ router.get('/scoring', (req, res) => {
     const creeLe = new Date(o.created_at);
     const joursDepuisCreation = Math.floor((aujourdhui - creeLe) / (1000 * 60 * 60 * 24));
 
-    // Points selon l'étape (0-80 points)
     score += pointsEtape[o.etape] || 0;
-
-    // Points selon la probabilité déclarée (0-10 points)
     score += Math.round((o.probabilite || 0) / 10);
 
-    // Malus si l'opportunité stagne depuis longtemps
     if (joursDepuisCreation > 60) score -= 20;
     else if (joursDepuisCreation > 30) score -= 10;
 
-    // Bonus si montant élevé (au dessus de 500 000 XOF)
     if (o.montant >= 500000) score += 10;
 
-    // Clamp entre 0 et 100
     score = Math.max(0, Math.min(100, score));
 
-    // Niveau de priorité lisible
     let priorite;
     if (score >= 70)      priorite = 'haute';
     else if (score >= 40) priorite = 'moyenne';
     else                  priorite = 'faible';
 
-    return {
-      ...o,
-      score,
-      priorite,
-      jours_depuis_creation: joursDepuisCreation
-    };
+    return { ...o, score, priorite, jours_depuis_creation: joursDepuisCreation };
   });
 
-  // Tri par score décroissant
   scored.sort((a, b) => b.score - a.score);
-
   res.json(scored);
 });
 
 // ─── 2. ALERTES INTELLIGENTES ───────────────────────────────────────────────
-// GET /api/analytics/alertes
-// Retourne toutes les situations qui méritent attention immédiate
-
 router.get('/alertes', (req, res) => {
   const alertes = [];
 
-  // Factures en retard de paiement
+  // Factures en retard
   const facturesRetard = db.prepare(`
     SELECT f.id, f.numero, f.montant_ttc, f.date_echeance,
            c.nom AS contact_nom, c.email
@@ -107,7 +93,7 @@ router.get('/alertes', (req, res) => {
       type: 'facture_retard',
       niveau: joursRetard > 30 ? 'critique' : 'warning',
       titre: `Facture ${f.numero} en retard`,
-      message: `${f.contact_nom} — ${f.montant_ttc?.toLocaleString('fr-FR')} XOF — ${joursRetard} jour(s) de retard`,
+      message: `${f.contact_nom} — ${formatMontant(f.montant_ttc)} — ${joursRetard} jour(s) de retard`,
       lien: '/factures',
       id_reference: f.id
     });
@@ -134,7 +120,7 @@ router.get('/alertes', (req, res) => {
     });
   });
 
-  // Opportunités sans activité depuis 30 jours
+  // Opportunités stagnantes
   const oppStagnantes = db.prepare(`
     SELECT o.id, o.titre, o.etape, o.montant, o.updated_at,
            c.nom AS contact_nom,
@@ -160,7 +146,7 @@ router.get('/alertes', (req, res) => {
     });
   });
 
-  // Clients sans interaction depuis 90 jours
+  // Clients inactifs
   const clientsInactifs = db.prepare(`
     SELECT c.id, c.nom, c.entreprise, c.updated_at
     FROM contacts c
@@ -184,7 +170,6 @@ router.get('/alertes', (req, res) => {
     });
   });
 
-  // Tri : critique d'abord, puis warning, puis info
   const ordre = { critique: 0, warning: 1, info: 2 };
   alertes.sort((a, b) => ordre[a.niveau] - ordre[b.niveau]);
 
@@ -198,60 +183,43 @@ router.get('/alertes', (req, res) => {
 });
 
 // ─── 3. INDICATEURS ENRICHIS AVEC FILTRES ───────────────────────────────────
-// GET /api/analytics/indicateurs?periode=mois&commercial_id=1&secteur=telecom
-// Permet de filtrer les stats du dashboard par période, commercial, secteur
-
 router.get('/indicateurs', (req, res) => {
   const { periode, commercial_id, secteur } = req.query;
 
-  // Calcul de la date de début selon la période
   let dateDebut;
   switch (periode) {
-    case 'semaine':  dateDebut = "date('now', '-7 days')";  break;
+    case 'semaine':   dateDebut = "date('now', '-7 days')";   break;
     case 'trimestre': dateDebut = "date('now', '-3 months')"; break;
-    case 'annee':    dateDebut = "date('now', '-1 year')";  break;
-    default:         dateDebut = "date('now', '-1 month')"; // mois par défaut
+    case 'annee':     dateDebut = "date('now', '-1 year')";   break;
+    default:          dateDebut = "date('now', '-1 month')";
   }
 
-  // Filtre commercial (optionnel)
   const filtreCommercial = commercial_id ? `AND o.owner_id = ${parseInt(commercial_id)}` : '';
   const filtreCommercialContacts = commercial_id ? `AND c.owner_id = ${parseInt(commercial_id)}` : '';
-
-  // Filtre secteur (optionnel)
   const filtreSecteur = secteur ? `AND c.secteur = '${secteur.replace(/'/g, "''")}'` : '';
 
-  // Taux de conversion prospects → clients
   const totalProspects = db.prepare(`
     SELECT COUNT(*) as c FROM contacts
-    WHERE type = 'prospect'
-    AND created_at >= ${dateDebut}
-    ${filtreCommercialContacts}
-    ${filtreSecteur}
+    WHERE type = 'prospect' AND created_at >= ${dateDebut}
+    ${filtreCommercialContacts} ${filtreSecteur}
   `).get().c;
 
   const totalConvertis = db.prepare(`
     SELECT COUNT(*) as c FROM contacts
-    WHERE type = 'client'
-    AND created_at >= ${dateDebut}
-    ${filtreCommercialContacts}
-    ${filtreSecteur}
+    WHERE type = 'client' AND created_at >= ${dateDebut}
+    ${filtreCommercialContacts} ${filtreSecteur}
   `).get().c;
 
   const tauxConversion = totalProspects > 0
     ? Math.round((totalConvertis / (totalProspects + totalConvertis)) * 100)
     : 0;
 
-  // Délai moyen de paiement (en jours)
   const delaiPaiement = db.prepare(`
-    SELECT ROUND(AVG(
-      julianday(created_at) - julianday(date_emission)
-    ), 1) as delai_moyen
+    SELECT ROUND(AVG(julianday(created_at) - julianday(date_emission)), 1) as delai_moyen
     FROM factures
-    WHERE statut = 'paye'
-    AND date_emission >= ${dateDebut}
+    WHERE statut = 'paye' AND date_emission >= ${dateDebut}
   `).get().delai_moyen;
 
-  // Services les plus vendus sur la période
   const topServices = db.prepare(`
     SELECT s.titre, s.categorie, COUNT(*) as nb_ventes,
            COALESCE(SUM(cs.tarif_ht), 0) as ca_ht
@@ -263,36 +231,28 @@ router.get('/indicateurs', (req, res) => {
     LIMIT 5
   `).all();
 
-  // CA sur la période
   const caPeriode = db.prepare(`
     SELECT COALESCE(SUM(montant_ttc), 0) as total
     FROM factures
-    WHERE statut = 'paye'
-    AND date_emission >= ${dateDebut}
+    WHERE statut = 'paye' AND date_emission >= ${dateDebut}
   `).get().total;
 
-  // Opportunités créées vs gagnées sur la période
   const oppCreees = db.prepare(`
     SELECT COUNT(*) as c FROM opportunites
-    WHERE created_at >= ${dateDebut}
-    ${filtreCommercial}
+    WHERE created_at >= ${dateDebut} ${filtreCommercial}
   `).get().c;
 
   const oppGagnees = db.prepare(`
     SELECT COUNT(*) as c FROM opportunites
-    WHERE etape = 'gagne'
-    AND updated_at >= ${dateDebut}
-    ${filtreCommercial}
+    WHERE etape = 'gagne' AND updated_at >= ${dateDebut} ${filtreCommercial}
   `).get().c;
 
-  // Liste des commerciaux pour le filtre côté front
   const commerciaux = db.prepare(`
     SELECT id, nom FROM users
     WHERE role IN ('commercial', 'manager', 'admin')
     ORDER BY nom
   `).all();
 
-  // Secteurs disponibles pour le filtre
   const secteurs = db.prepare(`
     SELECT DISTINCT secteur FROM contacts
     WHERE secteur IS NOT NULL AND secteur != ''

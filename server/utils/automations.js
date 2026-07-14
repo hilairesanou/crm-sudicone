@@ -5,6 +5,20 @@
 const db = require('../db/connection');
 const { logActivite } = require('./activite');
 
+
+function formatMontant(montant) {
+  const n = Math.round(Number(montant) || 0);
+  let s = n.toString();
+  let result = '';
+  let count = 0;
+  for (let i = s.length - 1; i >= 0; i--) {
+    if (count > 0 && count % 3 === 0) result = ' ' + result;
+    result = s[i] + result;
+    count++;
+  }
+  return result + ' XOF';
+}
+
 // ── Utilitaire : créer une tâche automatique ──────────────────────────────────
 function creerTacheAuto(titre, description, contactId, opportuniteId, assigneId, priorite = 'haute') {
   const demain = new Date();

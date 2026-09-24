@@ -417,22 +417,24 @@
 
     try {
       // Charger tout en parallèle
+      const queryString = params.toString() ? '?' + params.toString() : '';
+
       const [
         stats, caData, pipelineData, entonnoir, tauxConv,
         commerciaux, services, activite, facturesStatut,
         contactsType, paiement
       ] = await Promise.all([
-        api.get('/api/stats/dashboard'),
-        api.get('/api/stats/ca-mensuel'),
-        api.get('/api/stats/pipeline-par-etape'),
-        api.get('/api/stats/entonnoir-conversion'),
-        api.get('/api/stats/taux-conversion-mensuel'),
-        api.get('/api/stats/ca-par-commercial'),
-        api.get('/api/stats/top-services'),
-        api.get('/api/stats/heatmap-activite'),
-        api.get('/api/stats/factures-par-statut'),
-        api.get('/api/stats/contacts-par-type'),
-        api.get('/api/stats/delai-paiement')
+        api.get('/api/stats/dashboard' + queryString),
+        api.get('/api/stats/ca-mensuel' + queryString),
+        api.get('/api/stats/pipeline-par-etape' + queryString),
+        api.get('/api/stats/entonnoir-conversion' + queryString),
+        api.get('/api/stats/taux-conversion-mensuel' + queryString),
+        api.get('/api/stats/ca-par-commercial' + queryString),
+        api.get('/api/stats/top-services' + queryString),
+        api.get('/api/stats/heatmap-activite' + queryString),
+        api.get('/api/stats/factures-par-statut' + queryString),
+        api.get('/api/stats/contacts-par-type' + queryString),
+        api.get('/api/stats/delai-paiement' + queryString)
       ]);
 
       // ── KPIs ───────────────────────────────────────────────────────────────

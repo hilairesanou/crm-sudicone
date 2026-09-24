@@ -5,7 +5,7 @@
 const db = require('../db/connection');
 const { logActivite } = require('./activite');
 
-
+// ── Formatage montant ─────────────────────────────────────────────────────────
 function formatMontant(montant) {
   const n = Math.round(Number(montant) || 0);
   let s = n.toString();
@@ -30,7 +30,7 @@ function creerTacheAuto(titre, description, contactId, opportuniteId, assigneId,
     WHERE titre = ? AND contact_id = ? AND statut NOT IN ('terminee', 'annulee')
   `).get(titre, contactId);
 
-  if (existing) return null; // Éviter les doublons
+  if (existing) return null;
 
   const result = db.prepare(`
     INSERT INTO taches (titre, description, contact_id, opportunite_id,
@@ -124,7 +124,7 @@ function regle_opportuniteProche() {
 // ════════════════════════════════════════════════════════════════════════════════
 // RÈGLE 2 — Opportunité gagnée
 // SI étape passe à "gagne"
-// ALORS créer tâche "Préparer le contrat" + notifier admin
+// ALORS convertir contact en client + créer tâche + notifier admin
 // ════════════════════════════════════════════════════════════════════════════════
 function regle_opportuniteGagnee(opportuniteId) {
   const opp = db.prepare(`
@@ -136,6 +136,16 @@ function regle_opportuniteGagnee(opportuniteId) {
 
   if (!opp || opp.etape !== 'gagne') return;
 
+  // Convertir le contact en client
+  if (opp.contact_id) {
+    db.prepare(`
+      UPDATE contacts
+      SET type = 'client', statut_client = 'actif'
+      WHERE id = ? AND type != 'client'
+    `).run(opp.contact_id);
+    console.log(`🤖 Contact ${opp.contact_nom} converti en client`);
+  }
+
   const admin = db.prepare(
     `SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1`
   ).get();
@@ -143,7 +153,7 @@ function regle_opportuniteGagnee(opportuniteId) {
 
   creerTacheAuto(
     `Préparer le contrat : ${opp.titre}`,
-    `L'opportunité "${opp.titre}" vient d'être gagnée !\nMontant : ${Number(opp.montant || 0).toLocaleString('fr-FR')} XOF\nContact : ${opp.contact_nom || 'Non défini'}\n\nActions à faire :\n- Rédiger le contrat\n- Envoyer la facture\n- Planifier le démarrage`,
+    `L'opportunité "${opp.titre}" vient d'être gagnée !\nMontant : ${formatMontant(opp.montant)}\nContact : ${opp.contact_nom || 'Non défini'}\n\nActions à faire :\n- Rédiger le contrat\n- Envoyer la facture\n- Planifier le démarrage`,
     opp.contact_id,
     opp.id,
     adminId,
@@ -153,12 +163,12 @@ function regle_opportuniteGagnee(opportuniteId) {
   notifierAdmin(
     'opportunite_gagnee',
     `🎉 Opportunité gagnée : ${opp.titre}`,
-    `${opp.contact_nom || 'Client'} — ${Number(opp.montant || 0).toLocaleString('fr-FR')} XOF`,
+    `${opp.contact_nom || 'Client'} — ${formatMontant(opp.montant)}`,
     opp.contact_id,
     opp.id
   );
 
-  console.log(`🤖 Règle 2 : opportunité gagnée → tâche contrat créée (${opp.titre})`);
+  console.log(`🤖 Règle 2 : opportunité gagnée → contact converti + tâche créée (${opp.titre})`);
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -224,7 +234,7 @@ function regle_devisSansReponse() {
 
     const tacheId = creerTacheAuto(
       `Relancer le devis : ${d.numero}`,
-      `Le devis ${d.numero} envoyé à ${d.contact_nom || 'un client'} est sans réponse depuis ${joursEcoules} jour(s).\nMontant : ${Number(d.montant_ttc || 0).toLocaleString('fr-FR')} XOF TTC\n\nActions à faire :\n- Appeler le client\n- Vérifier si le devis a été reçu\n- Proposer une modification si nécessaire`,
+      `Le devis ${d.numero} envoyé à ${d.contact_nom || 'un client'} est sans réponse depuis ${joursEcoules} jour(s).\nMontant : ${formatMontant(d.montant_ttc)}\n\nActions à faire :\n- Appeler le client\n- Vérifier si le devis a été reçu\n- Proposer une modification si nécessaire`,
       d.contact_id,
       null,
       commercialId,
